@@ -1,0 +1,93 @@
+/* Optimize page specific styles */
+#map-container {
+    margin-top: 20px;
+}
+
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.route-legend {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
+    font-size: 12px;
+}
+
+.route-legend h6 {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.route-legend div {
+    margin-bottom: 5px;
+}
+
+.timing-info, .cost-breakdown {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.card-header {
+    font-weight: bold;
+}
+
+.alert {
+    margin-bottom: 15px;
+}
+
+.badge {
+    margin: 2px;
+}
+
+/* Ensure map is visible */
+.leaflet-container {
+    height: 100%;
+    width: 100%;
+}
+
+/* Route information styling */
+.route-info .mb-3 {
+    border-left: 3px solid;
+    padding-left: 10px;
+    margin-bottom: 15px !important;
+}
+
+.route-info .text-primary {
+    border-left-color: #007bff;
+}
+
+.route-info .text-danger {
+    border-left-color: #dc3545;
+}
+
+.route-info small {
+    color: #6c757d;
+    font-size: 0.875em;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    #map {
+        height: 300px;
+    }
+    
+    .route-legend {
+        font-size: 10px;
+        padding: 8px;
+    }
+    
+    .route-info .mb-3 {
+        font-size: 0.9em;
+    }
+} 

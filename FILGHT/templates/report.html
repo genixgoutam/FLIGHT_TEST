@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% block content %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono">
+<link rel="stylesheet" href="/static/css/report.css"> 
+<div class="container mt-4">
+    <h2 class="text-shadow">Flight Optimization Report</h2>
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="fas fa-plane"></i> Flight Data Selection</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md">
+                    <label for="airIdSelect" class="form-label">From Airport</label>
+                    <select class="form-select" id="airIdSelect">
+                        <option value="">Select origin airport...</option>
+                        {% for airport in airports %}
+                        <option value="{{ airport.airid }}">{{ airport.airid }} - {{ airport.city }}, {{ airport.country }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md">
+                    <label for="airIdSelect" class="form-label">To Airport</label>
+                    <select class="form-select" id="airIdSelect">
+                        <option value="">Select destination airport...</option>
+                        {% for airport in airports %}
+                        <option value="{{ airport.airid }}">{{ airport.airid }} - {{ airport.city }}, {{ airport.country }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="button" class="btn btn-primary" onclick="filterReportData()">
+                    <i class="fas fa-filter"></i> Filter Report
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="resetFilters()">
+                    <i class="fas fa-refresh"></i> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+    {% if data_source %}
+    <div class="data-source-badge data-source-{{ data_source }}">
+        Data Source: {{ data_source|title }}
+    </div>
+    {% endif %}
+    <div class="row g-4 mt-2">
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white"><i class="fas fa-cloud-sun"></i> Weather Report</div>
+                <div class="card-body">
+                    <div id="weather-summary" class="mb-2">No data</div>
+                    <div id="weather-table"></div>
+                    <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('weather')">Ask To AI</button> -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white"><i class="fas fa-plane-departure"></i> Air Traffic</div>
+                <div class="card-body">
+                    <div id="air-traffic-summary" class="mb-2">No data</div>
+                <div id="air-traffic-table"></div>
+                <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('operational_constraints')">Ask To AI</button> -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark"><i class="fas fa-gas-pump"></i> Fuel Efficiency</div>
+                <div class="card-body">
+                    <div id="fuel-efficiency-summary" class="mb-2">No data</div>
+                    <div id="fuel-efficiency-table"></div>
+                    <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('fuel_efficiency')">Ask To AI</button> -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white"><i class="fas fa-shield-alt"></i> Safety Factor</div>
+                <div class="card-body">
+                    <div id="safety-factor-summary" class="mb-2">No data</div>
+                    <div id="safety-factor-table"></div>
+                    <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('safety_factors')">Ask To AI</button> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button class="btn btn-success mb-2" onclick="sendAllCardsToAI()">Chat With AI</button>
+        <a href="/route/" class="btn btn-primary">View Optimized Route</a>
+    </div>
+</div>
+<!-- Pass flight data to JavaScript -->
+{{ api_flight_data|json_script:"flight-data" }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+<script>
+function renderTable(data) {
+    if (!data || data.length === 0) return '<em>No data available</em>';
+    let keys = Object.keys(data[0]);
+    let table = '<table><thead><tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr></thead><tbody>';
+    table += data.map(row => '<tr>' + keys.map(k => `<td>${row[k]}</td>`).join('') + '</tr>').join('');
+    table += '</tbody></table>';
+    return table;
+}
+function renderSummary(data, key) {
+    if (!data || data.length === 0) return '<em>No data</em>';
+    if (key === 'weather') {
+        return data.map(d => `${d.type || d.condition || 'N/A'} (${d.severity || d.level || 'N/A'})`).join(', ');
+    }
+    if (key === 'air_traffic' || key === 'operational_constraints') {
+        return data.map(d => d.status || d.level || d.type || 'N/A').join(', ');
+    }
+    if (key === 'fuel_efficiency') {
+        return data.map(d => `${d.aircraft_type || 'N/A'}: ${d.efficiency || d.value || 'N/A'}`).join(', ');
+    }
+    if (key === 'safety_factors') {
+        return data.map(d => `${d.factor || d.type || 'N/A'}: ${d.value || d.score || 'N/A'}`).join(', ');
+    }
+    return '...';
+}
+
+function showConnectionStatus(message, isSuccess) {
+    const statusDiv = document.getElementById('connection-status');
+    const statusText = document.getElementById('status-text');
+    statusDiv.style.display = 'block';
+    statusDiv.className = `connection-status ${isSuccess ? 'connection-success' : 'connection-error'}`;
+    statusText.textContent = message;
+}
+
+function initializeSupabaseData() {
+    fetch('/api/init-supabase/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showConnectionStatus('Supabase data initialized successfully! Refreshing page...', true);
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showConnectionStatus('Failed to initialize Supabase data: ' + data.error, false);
+        }
+    })
+    .catch(error => {
+        showConnectionStatus('Error initializing Supabase data: ' + error.message, false);
+    });
+}
+
+let flightData = [];
+let currentReportData = {};
+
+// Load flight data from Django context
+// DEBUG: Log flightData on page load
+console.log('Loading flightData from context...');
+document.addEventListener('DOMContentLoaded', function() {
+    const flightDataElement = document.getElementById('flight-data');
+    if (flightDataElement) {
+        flightData = JSON.parse(flightDataElement.textContent || '[]');
+        console.log('Loaded flight data:', flightData.length, 'records');
+        console.log('flightData sample:', flightData[0]);
+    } else {
+        console.warn('No flight-data element found in DOM!');
+    }
+    // Store initial report data
+    currentReportData = {
+        weather: [],
+        operational_constraints: [],
+        fuel_efficiency: [],
+        safety_factors: []
+    };
+});
+
+function filterReportData() {
+    console.log('Filter button clicked');
+    console.log('flightData:', flightData);
+    const airId = document.getElementById('airIdSelect').value;
+    // Remove condition and alertStatus logic
+    let filteredData = flightData;
+    // Filter by Air ID
+    if (airId) {
+        filteredData = filteredData.filter(flight => flight['air id'] === airId);
+    }
+    // Remove filter by condition and alert status
+    console.log('Filtered data:', filteredData);
+    if (filteredData.length === 0) {
+        alert('No flight data found for the selected criteria');
+        return;
+    }
+    // Transform filtered data into report format
+    const weather_data = [];
+    const air_traffic_data = [];
+    const fuel_efficiency_data = [];
+    const safety_factors_data = [];
+    for (const record of filteredData) {
+        // Weather data
+        weather_data.push({
+            'type': record.conditions || 'unknown',
+            'severity': 'Medium',
+            'visibility': `${record['distance_km'] || 0}km`,
+            'wind_speed': `${record['wind speed kmh'] || 0} km/h`,
+            'temperature': `${record['temperature'] || 0}°C`,
+            'humidity': `${record['humidity percent'] || 0}%`,
+            'pressure': `${record['pressure hpa'] || 0} hPa`,
+            'precipitation': `${record['precipitation mm'] || 0} mm`
+        });
+        // Air traffic data
+        air_traffic_data.push({
+            'type': `Flight ${record['air id'] || 'Unknown'}`,
+            'status': record['alert_status'] || 'normal',
+            'level': record['alert_status'] == 'warning' ? 'Medium' : 'Low',
+            'description': `Flight monitoring for ${record['air id'] || 'Unknown'}`,
+            'duration': 'Continuous',
+            'altitude': `${record['altitude_ft'] || 0} ft`,
+            'speed': `${record['speed_knots'] || 0} knots`,
+            'heading': `${record['heading_deg'] || 0}°`
+        });
+        // Fuel efficiency data
+        fuel_efficiency_data.push({
+            'aircraft_type': 'Commercial Aircraft',
+            'efficiency': `${record['fuel_efficiency_kmpl'] || 0} km/L`,
+            'fuel_consumption': `${record['fuel_consumption_lph'] || 0} L/h`,
+            'emissions': `${record['fuel_flow_kgh'] || 0} kg/h CO2`,
+            'optimization_potential': `${100 - (record['engine_efficiency_percent'] || 0)}%`,
+            'engine_rpm': record['engine_rpm'] || 0,
+            'fuel_remaining': `${record['fuel_remaining_kg'] || 0} kg`
+        });
+        // Safety factors data
+        safety_factors_data.push({
+            'factor': `Flight ${record['air id'] || 'Unknown'} Safety`,
+            'value': record['alert_status'] || 'normal',
+            'score': `${record['engine_efficiency_percent'] || 0}/100`,
+            'risk_level': record['alert_status'] == 'warning' ? 'Medium' : 'Low',
+            'recommendations': `Monitor ${record['air id'] || 'Unknown'} flight conditions`,
+            'vibration_level': record['vibration_level'] || 0,
+            'tilt_angle': `${record['tilt_angle_deg'] || 0}°`
+        });
+    }
+    // Update current report data
+    currentReportData = {
+        weather: weather_data,
+        operational_constraints: air_traffic_data,
+        fuel_efficiency: fuel_efficiency_data,
+        safety_factors: safety_factors_data
+    };
+    // Update the display
+    updateReportDisplay();
+}
+
+function updateReportDisplay() {
+    // Weather Report Card
+    const w = currentReportData.weather[0];
+    document.getElementById('weather-summary').innerHTML = w
+        ? `<strong>${w.type}</strong> (${w.severity})<br>
+           <span>Visibility: ${w.visibility}</span><br>
+           <span>Wind: ${w.wind_speed}</span><br>
+           <span>Temp: ${w.temperature}</span><br>
+           <span>Humidity: ${w.humidity}</span><br>
+           <span>Pressure: ${w.pressure}</span><br>
+           <span>Precipitation: ${w.precipitation}</span>`
+        : '<em>No data</em>';
+    document.getElementById('weather-table').innerHTML = '';
+
+    // Air Traffic Card
+    const a = currentReportData.operational_constraints[0];
+    document.getElementById('air-traffic-summary').innerHTML = a
+        ? `<strong>${a.type}</strong><br>
+           Status: ${a.status}<br>
+           Level: ${a.level}<br>
+           Altitude: ${a.altitude}<br>
+           Speed: ${a.speed}<br>
+           Heading: ${a.heading}`
+        : '<em>No data</em>';
+    document.getElementById('air-traffic-table').innerHTML = '';
+
+    // Fuel Efficiency Card
+    const f = currentReportData.fuel_efficiency[0];
+    document.getElementById('fuel-efficiency-summary').innerHTML = f
+        ? `<strong>${f.aircraft_type}:</strong> ${f.efficiency}<br>
+           Fuel Consumption: ${f.fuel_consumption}<br>
+           Emissions: ${f.emissions}<br>
+           Optimization: ${f.optimization_potential}<br>
+           Engine RPM: ${f.engine_rpm}<br>
+           Fuel Remaining: ${f.fuel_remaining}`
+        : '<em>No data</em>';
+    document.getElementById('fuel-efficiency-table').innerHTML = '';
+
+    // Safety Factor Card
+    const s = currentReportData.safety_factors[0];
+    document.getElementById('safety-factor-summary').innerHTML = s
+        ? `<strong>${s.factor}</strong><br>
+           Value: ${s.value}<br>
+           Score: ${s.score}<br>
+           Risk: ${s.risk_level}<br>
+           Vibration: ${s.vibration_level}<br>
+           Tilt: ${s.tilt_angle}<br>
+           Recommendations: ${s.recommendations}`
+        : '<em>No data</em>';
+    document.getElementById('safety-factor-table').innerHTML = '';
+}
+
+function showFilterSummary(count, airId) {
+    let summary = `Showing ${count} flight record(s)`;
+    if (airId) summary += ` for Air ID: ${airId}`;
+    // Create or update summary element
+    let summaryElement = document.getElementById('filter-summary');
+    if (!summaryElement) {
+        summaryElement = document.createElement('div');
+        summaryElement.id = 'filter-summary';
+        summaryElement.className = 'alert alert-info mt-3';
+        document.querySelector('.container').insertBefore(summaryElement, document.querySelector('.data-source-badge'));
+    }
+    summaryElement.innerHTML = `<i class="fas fa-info-circle"></i> ${summary}`;
+}
+
+function resetFilters() {
+    // Reset select elements
+    document.getElementById('airIdSelect').value = '';
+    // Remove filter summary
+    const summaryElement = document.getElementById('filter-summary');
+    if (summaryElement) {
+        summaryElement.remove();
+    }
+    // Reload original data
+    location.reload();
+}
+
+// function sendCardToAI(cardKey) {
+//     // Get the first item of the relevant card data
+//     let cardData = currentReportData[cardKey] && currentReportData[cardKey][0];
+//     if (!cardData) {
+//         alert('No data to send to AI.');
+//         return;
+//     }
+//     // Store in localStorage
+//     localStorage.setItem('ai_card_data', JSON.stringify({
+//         card: cardKey,
+//         data: cardData
+//     }));
+//     // Redirect to chatbot page
+//     window.location.href = '/chat-bot/';
+// }
+
+function sendAllCardsToAI() {
+    // Send all four card data to AI
+    localStorage.setItem('ai_card_data', JSON.stringify({
+        card: 'all',
+        data: currentReportData
+    }));
+    window.location.href = '/chat-bot/';
+}
+
+fetch('/api/report/')
+.then(response => response.json())
+.then(data => {
+    // Update summaries
+    document.getElementById('weather-summary').innerHTML = renderSummary(data.weather, 'weather');
+    document.getElementById('fuel-efficiency-summary').innerHTML = renderSummary(data.fuel_efficiency, 'fuel_efficiency');
+    document.getElementById('safety-factor-summary').innerHTML = renderSummary(data.safety_factors, 'safety_factors');
+    document.getElementById('air-traffic-summary').innerHTML = renderSummary(data.operational_constraints, 'operational_constraints');
+    
+    // Update tables
+    document.getElementById('weather-table').innerHTML = renderTable(data.weather);
+    document.getElementById('fuel-efficiency-table').innerHTML = renderTable(data.fuel_efficiency);
+    document.getElementById('safety-factor-table').innerHTML = renderTable(data.safety_factors);
+    document.getElementById('air-traffic-table').innerHTML = renderTable(data.operational_constraints);
+    
+    // Check if we're using local data and show init button
+    const dataSourceBadge = document.querySelector('.data-source-local');
+    if (dataSourceBadge) {
+        document.getElementById('init-supabase-btn').style.display = 'inline-block';
+        document.getElementById('init-supabase-btn').addEventListener('click', initializeSupabaseData);
+    }
+})
+.catch(error => {
+    console.error('Error fetching report data:', error);
+    showConnectionStatus('Error loading report data: ' + error.message, false);
+    
+    // Show init button if there's an error
+    document.getElementById('init-supabase-btn').style.display = 'inline-block';
+    document.getElementById('init-supabase-btn').addEventListener('click', initializeSupabaseData);
+});
+</script>
+{% endblock %}

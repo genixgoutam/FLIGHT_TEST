@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Path Optimization</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+</head>
+
+<body>
+    <nav class="menu">
+        <ul>
+            <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+            <li><a href="/optimize/" class="{% if 'optimize' in request.path %}active{% endif %}">Optimize</a></li>
+            <li><a href="/report/" class="{% if 'report' in request.path %}active{% endif %}">Report</a></li>
+            <li><a href="/flight-info/" class="{% if 'flight-info' in request.path %}active{% endif %}">Flight Info</a>
+            </li>
+            <li><a href="/map/" class="{% if 'map' in request.path %}active{% endif %}">Map</a></li>
+            <li><a href="/admin/" class="{% if 'admin' in request.path %}active{% endif %}">Admin</a></li>
+            <li><a href="/flight/" class="{% if 'flight' in request.path %}active{% endif %}"">Flight</a></li>
+        </ul>
+    </nav>
+
+    <div class=" container mt-5">
+                    <div class="row">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2>Welcome to Flight Path Optimization</h2>
+                                </div>
+                                <div class="card-body">
+                                    <p class="lead">This application helps optimize flight paths using advanced
+                                        algorithms.</p>
+                                    <p>Features:</p>
+                                    <ul>
+                                        <li>Flight path optimization</li>
+                                        <li>Airport management</li>
+                                        <li>Cost analysis</li>
+                                    </ul>
+                                    <a href="/optimize/" class="btn btn-primary">Start Optimization</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

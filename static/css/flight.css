@@ -1,0 +1,33 @@
+.flight-card {
+    border-left: 4px solid #007bff;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+  }
+  .flight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .price-card {
+    border-left: 4px solid #28a745;
+    background-color: #f8fff9;
+  }
+  .schedule-card {
+    border-left: 4px solid #17a2b8;
+    background-color: #f8f9fa;
+  }
+  .badge-custom {
+    font-size: 0.75em;
+  }
+  .flight-number {
+    font-weight: bold;
+    color: #007bff;
+  }
+  .airline-name {
+    color: #6c757d;
+    font-style: italic;
+  }
+  .price-highlight {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #28a745;
+  }

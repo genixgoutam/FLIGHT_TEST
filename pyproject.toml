@@ -1,0 +1,24 @@
+[project]
+name = "flight"
+version = "0.1.0"
+description = "QAOA Flight Path Optimization with Django"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "django>=5.2.3",
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "plotly>=5.15.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "django-crispy-forms>=2.0",
+    "crispy-bootstrap5>=0.7",
+    "python-dotenv>=1.0.0",
+    "requests>=2.32.4",
+    "djangorestframework>=3.16.0",
+    "supabase>=2.16.0",
+    "tensorflow>=2.19.0",
+    "whitenoise>=6.9.0",
+]
+
+

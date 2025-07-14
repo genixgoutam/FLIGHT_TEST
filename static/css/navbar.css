@@ -1,0 +1,73 @@
+.menu {
+  padding: 20px 0 5px 0;
+  font-family: 'Open Sans Condensed', sans-serif;
+  background: #0a1124; /* Midnight blue */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.menu li {
+  display: inline-block;
+  margin: 0 7px;
+}
+
+.menu a {
+  font-size: 15px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #7ecbff; /* Electric blue */
+  display: block;
+  position: relative;
+  padding: 8px 0;
+  letter-spacing: 1px;
+  transition: color 0.3s;
+}
+
+.menu a::before {
+  content: "";
+  width: 100%;
+  height: 3px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #00c6fb 0%, #005bea 100%);
+  transition: 0.4s transform cubic-bezier(.4,2,.6,1), 0.4s opacity;
+  transform: scaleX(0);
+  opacity: 0.7;
+  border-radius: 2px;
+}
+
+.menu a:hover,
+.menu a.active {
+  color: #00c6fb;
+  text-shadow: 0 0 8px #00c6fb88;
+}
+
+.menu a:hover::before,
+.menu a.active::before {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.custom-navbar {
+  background-color: #0a0f24; /* Midnight Blue */
+  color: #00bfff;            /* Electric Blue */
+}
+
+.custom-navbar .navbar-nav .nav-link {
+  color: #00bfff;
+}
+
+.custom-navbar .navbar-brand {
+  color: #00bfff;
+}
+
+.custom-navbar .nav-link:hover {
+  color: #ffffff; /* Optional highlight on hover */
+}

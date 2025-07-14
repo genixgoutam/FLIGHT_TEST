@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono');
+* { box-sizing: border-box; font-weight: normal; }
+body { color: #555; background: #f8f9fa; text-align: center; font-family: 'Roboto Mono'; padding: 1em; }
+h1 { font-size: 2.2em; }
+.card { border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5em; background: #fff; }
+.card-header { border-radius: 10px 10px 0 0; }
+.card-title { font-size: 1.3em; }
+.data-source-badge {
+    display: inline-block;
+    padding: 0.25em 0.75em;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-bottom: 1em;
+}
+.data-source-api_flight { background: #3ecf8e; color: #000; }
+.data-source-none { background: #ffb347; color: #000; }
+
+.glow-on-hover {
+    width: 160px;
+    height: 40px;
+    border: none;
+    outline: none;
+    color: #fff;
+    background: #111;
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+.glow-on-hover:before {
+    content: '';
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    position: absolute;
+    top: -2px;
+    left:-2px;
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(5px);
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    animation: glowing 20s linear infinite;
+    opacity: 0;
+    transition: opacity .3s ease-in-out;
+    border-radius: 10px;
+}
+.glow-on-hover:active {
+    color: #000
+}
+.glow-on-hover:active:after {
+    background: transparent;
+}
+.glow-on-hover:hover:before {
+    opacity: 1;
+}
+.glow-on-hover:after {
+    z-index: -1;
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #111;
+    left: 0;
+    top: 0;
+    border-radius: 10px;
+}
+@keyframes glowing {
+    0% { background-position: 0 0; }
+    50% { background-position: 400% 0; }
+    100% { background-position: 0 0; }
+}
