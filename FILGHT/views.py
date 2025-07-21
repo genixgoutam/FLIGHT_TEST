@@ -2,32 +2,12 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from .models import Airport, Flight, WeatherCondition, FuelEfficiency, SafetyFactor, OperationalConstraint
-from .api_utils import fetch_all_file_data, fetch_full_report, fetch_flight_data
+from .api_utils import fetch_full_report, fetch_flight_data, fetch_today_forecast
 from rest_framework import generics, views, status
 from rest_framework.response import Response
 from .serializers import (
     AirportSerializer, FlightSerializer, WeatherConditionSerializer,
     FuelEfficiencySerializer, SafetyFactorSerializer, OperationalConstraintSerializer
-)
-from .supabase_utils import (
-    fetch_and_save_flights, 
-    fetch_report_data_from_supabase, 
-    get_supabase_client, 
-    initialize_supabase_report_data,
-    fetch_air_data_by_id,
-    fetch_weather_data_by_id,
-    fetch_fuel_data_by_id,
-    fetch_safety_data_by_id,
-    fetch_flight_data_by_id,
-    load_api_flight_data,
-    fetch_flight_data_by_air_id,
-    fetch_all_flight_data,
-    fetch_flight_data_by_condition,
-    fetch_flight_data_by_alert_status,
-    get_available_air_ids,
-    get_available_conditions,
-    get_available_alert_statuses,
-    upload_api_flight_data_to_supabase
 )
 import json
 import os
@@ -344,28 +324,9 @@ def map_view(request):
     """View for displaying route maps"""
     return render(request, 'map.html')
 
-def show_file_data(request):
-    file_data = fetch_all_file_data()
-    return render(request, 'optimize.html', {'file_data': file_data})
-
 def api_airports(request):
     airports = list(Airport.objects.all().values('code', 'name', 'latitude', 'longitude'))
     return JsonResponse({"airports": airports})
-
-def api_air_traffic(request):
-    # Load air_traffic from file_data.json
-    data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'file_data.json')
-    with open(data_path, 'r', encoding='utf-8') as f:
-        file_data = json.load(f)
-    air_traffic = file_data.get('air_traffic', [])
-    # For demo, add random positions near Goa (if not present)
-    for plane in air_traffic:
-        if 'latitude' not in plane or 'longitude' not in plane:
-            # Randomize near Goa
-            import random
-            plane['latitude'] = 15.3 + random.uniform(-0.3, 0.3)
-            plane['longitude'] = 73.8 + random.uniform(-0.3, 0.3)
-    return JsonResponse({'air_traffic': air_traffic})
 
 def api_stops(request):
     stops = list(Airport.objects.all().values('code', 'name', 'latitude', 'longitude', 'country'))
@@ -406,20 +367,11 @@ def api_all_airports(request):
 
 def report_view(request):
     """Report view that fetches data from api_flight.json"""
-    from .supabase_utils import (
-        load_api_flight_data,
-        fetch_flight_data_by_air_id,
-        get_available_air_ids,
-        get_available_city,
-        get_available_country,
-        get_available_conditions,
-        get_available_alert_statuses
-    )
     
     # Load data from api_flight.json
     print("Loading api_flight.json data...")
-    api_flight_data = load_api_flight_data()
-    print(f"Loaded {len(api_flight_data) if api_flight_data else 0} records from api_flight.json")
+    # api_flight_data = load_api_flight_data()
+    # print(f"Loaded {len(api_flight_data) if api_flight_data else 0} records from api_flight.json")
     
     if api_flight_data:
         print("Sample record:", api_flight_data[0] if api_flight_data else "No data")
@@ -909,10 +861,9 @@ class FlightListView(generics.ListAPIView):
 class ReportDataView(views.APIView):
     def get(self, request):
         """API endpoint to get report data from api_flight.json"""
-        from .supabase_utils import load_api_flight_data
         
         # Load data from api_flight.json
-        api_flight_data = load_api_flight_data()
+        # api_flight_data = load_api_flight_data()
         
         if api_flight_data:
             # Transform api_flight.json data into the expected report format
@@ -1474,3 +1425,25 @@ class QAOAPredictView(APIView):
         response['Access-Control-Allow-Headers'] = 'Content-Type'
         return response
 
+@require_http_methods(["POST"])
+def api_live_weather(request):
+    try:
+        data = json.loads(request.body)
+        cities = data.get('cities', [])
+        forecasts = []
+        for city in cities:
+            # Find the first airport matching the city name (case-insensitive)
+            airport = Airport.objects.filter(city__iexact=city).first()
+            if airport:
+                forecasts.append({
+                    "city": city,
+                    "forecast": fetch_today_forecast(city, str(airport.latitude), str(airport.longitude))
+                })
+            else:
+                forecasts.append({
+                    "city": city,
+                    "error": "No airport found for this city."
+                })
+        return JsonResponse({"forecasts": forecasts})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

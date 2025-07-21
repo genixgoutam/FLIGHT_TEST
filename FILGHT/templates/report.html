@@ -51,6 +51,16 @@
                 <div class="card-body">
                     <div id="weather-summary" class="mb-2">No data</div>
                     <div id="weather-table"></div>
+                    <div class="mb-2">
+                        <label for="weather-cities-select">Select cities for live weather (hold Ctrl to select multiple):</label>
+                        <select id="weather-cities-select" class="form-select" multiple>
+                            {% for airport in airports %}
+                                <option value="{{ airport.city }}">{{ airport.city }} ({{ airport.country }})</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-sm btn-info mt-2" onclick="fetchLiveWeatherFromSelect()">Get Live Weather</button>
+                    </div>
+                    <div id="live-weather-result"></div>
                     <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('weather')">Ask To AI</button> -->
                 </div>
             </div>
@@ -352,6 +362,45 @@ function sendAllCardsToAI() {
         data: currentReportData
     }));
     window.location.href = '/chat-bot/';
+}
+
+function fetchLiveWeatherFromSelect() {
+    const select = document.getElementById('weather-cities-select');
+    const cities = Array.from(select.selectedOptions).map(opt => opt.value);
+    if (!cities.length) {
+        alert('Please select at least one city.');
+        return;
+    }
+    fetch('/api/live-weather/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({cities: cities})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById('live-weather-result').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+        } else {
+            let html = '<h5>Live Weather:</h5>';
+            data.forecasts.forEach(cityForecasts => {
+                html += `<strong>${cityForecasts.city}</strong><ul>`;
+                if (cityForecasts.forecast && cityForecasts.forecast.length > 0) {
+                    cityForecasts.forecast.forEach(entry => {
+                        html += `<li>${entry.time}: ${entry.temp_c}°C, ${entry.description}</li>`;
+                    });
+                } else if (cityForecasts.error) {
+                    html += `<li>${cityForecasts.error}</li>`;
+                } else {
+                    html += `<li>No data</li>`;
+                }
+                html += '</ul>';
+            });
+            document.getElementById('live-weather-result').innerHTML = html;
+        }
+    })
+    .catch(err => {
+        document.getElementById('live-weather-result').innerHTML = `<div class="alert alert-danger">${err}</div>`;
+    });
 }
 
 fetch('/api/report/')

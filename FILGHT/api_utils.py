@@ -1,15 +1,9 @@
 import json
 import os
 import random
+import requests
+from datetime import datetime
 
-DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'file_data.json')
-
-def _load_data():
-    try:
-        with open(DATA_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        return {}
 
 def fetch_weather():
     data = _load_data()
@@ -56,9 +50,6 @@ def fetch_air_traffic(lamin, lomin, lamax, lomax):
         return random.sample(air_traffic, min(5, len(air_traffic)))
     return []
 
-def fetch_all_file_data():
-    return _load_data()
-
 # def fetch_flights(dep_iata):
 #     url = f"http://api.aviationstack.com/v1/flights?access_key={AVIATIONSTACK_API_KEY}&dep_iata={dep_iata}"
 #     response = requests.get(url)
@@ -73,3 +64,40 @@ def fetch_flight_data(air_id):
         if flight.get('air_id') == air_id:
             return flight
     return None
+
+def fetch_today_forecast(city_name, latitude, longitude):
+    API_KEY = os.environ.get("RAPIDAPI_KEY")
+    API_HOST = os.environ.get("RAPIDAPI_HOST")
+    URL = f"https://{API_HOST}/fivedaysforcast"
+
+    headers = {
+        "x-rapidapi-key": API_KEY,
+        "x-rapidapi-host": API_HOST
+    }
+    querystring = {"latitude": latitude, "longitude": longitude, "lang": "EN"}
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    response = requests.get(URL, headers=headers, params=querystring)
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            entries = [
+                entry for entry in data.get("list", [])
+                if entry.get("dt_txt", "").startswith(today)
+            ]
+            result = []
+            for entry in entries:
+                time = entry["dt_txt"].split()[1]
+                temp_c = round(entry["main"]["temp"] - 273.15, 1)
+                desc = entry["weather"][0]["description"].capitalize()
+                result.append({
+                    "city": city_name,
+                    "time": time,
+                    "temp_c": temp_c,
+                    "description": desc
+                })
+            return result
+        except Exception as e:
+            return [{"city": city_name, "error": f"Failed to parse JSON: {e}"}]
+    else:
+        return [{"city": city_name, "error": f"API Error {response.status_code}: {response.text[:300]}"}]
