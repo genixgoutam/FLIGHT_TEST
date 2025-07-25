@@ -14,10 +14,8 @@
             <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
             <li><a href="/optimize/" class="{% if 'optimize' in request.path %}active{% endif %}">Optimize</a></li>
             <li><a href="/report/" class="{% if 'report' in request.path %}active{% endif %}">Report</a></li>
-            <li><a href="/flight-info/" class="{% if 'flight-info' in request.path %}active{% endif %}">Flight Info</a></li>
+            <!-- <li><a href="/flight-info/" class="{% if 'flight-info' in request.path %}active{% endif %}">Flight Info</a></li> -->
             <li><a href="/map/" class="{% if 'map' in request.path %}active{% endif %}">Map</a></li>
-            <li><a href="/chat-bot/" class="{% if 'chat-bot' in request.path %}active{% endif %}">AI Chatbot</a></li>
-            <li><a href="/admin/" class="{% if 'admin' in request.path %}active{% endif %}">Admin</a></li>
         </ul>
     </nav>
     <div class="container mt-4 mb-4">

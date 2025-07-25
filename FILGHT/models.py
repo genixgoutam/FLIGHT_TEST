@@ -30,177 +30,24 @@ class Airport(models.Model):
         c = 2 * math.asin(math.sqrt(a))
         
         return R * c
-
-class WeatherCondition(models.Model):
-    """Model to store weather conditions affecting flight operations"""
-    WEATHER_TYPES = [
-        ('clear', 'Clear'),
-        ('cloudy', 'Cloudy'),
-        ('rain', 'Rain'),
-        ('snow', 'Snow'),
-        ('storm', 'Storm'),
-        ('fog', 'Fog'),
-        ('windy', 'Windy'),
-        ('turbulence', 'Turbulence'),
-    ]
-    
-    SEVERITY_LEVELS = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('severe', 'Severe'),
-    ]
-    
-    weather_type = models.CharField(max_length=20, choices=WEATHER_TYPES)
-    severity = models.CharField(max_length=10, choices=SEVERITY_LEVELS, default='low')
-    temperature = models.FloatField(null=True, blank=True)  # in Celsius
-    wind_speed = models.FloatField(null=True, blank=True)  # in mph
-    wind_direction = models.FloatField(null=True, blank=True)  # in degrees
-    visibility = models.FloatField(null=True, blank=True)  # in miles
-    pressure = models.FloatField(null=True, blank=True)  # in hPa
-    humidity = models.FloatField(null=True, blank=True)  # percentage
-    location_lat = models.FloatField()
-    location_lon = models.FloatField()
-    altitude = models.FloatField(default=0)  # in feet
-    timestamp = models.DateTimeField(auto_now_add=True)
+class AircraftProfile(models.Model):
+    hex_code = models.CharField(max_length=10, unique=True)
+    type = models.CharField(max_length=100)
+    operator = models.CharField(max_length=100)
+    registration = models.CharField(max_length=50)
+    country = models.CharField(max_length=50)
     
     def __str__(self):
-        return f"{self.weather_type} - {self.severity} at {self.location_lat}, {self.location_lon}"
-    
-    def get_impact_score(self):
-        """Calculate impact score on flight operations (0-100, higher = more impact)"""
-        base_impact = {
-            'clear': 0, 'cloudy': 5, 'rain': 15, 'snow': 30,
-            'storm': 50, 'fog': 25, 'windy': 20, 'turbulence': 35
-        }
-        
-        severity_multiplier = {
-            'low': 0.5, 'medium': 1.0, 'high': 1.5, 'severe': 2.0
-        }
-        
-        base = base_impact.get(self.weather_type, 10)
-        multiplier = severity_multiplier.get(self.severity, 1.0)
-        
-        return min(100, base * multiplier)
-
-class FuelEfficiency(models.Model):
-    """Model to track fuel efficiency metrics for different aircraft and conditions"""
-    aircraft_type = models.CharField(max_length=50)
-    altitude = models.FloatField()  # in feet
-    speed = models.FloatField()  # in mph
-    fuel_consumption = models.FloatField()  # gallons per hour
-    distance = models.FloatField()  # in miles
-    fuel_per_mile = models.FloatField()  # gallons per mile
-    efficiency_rating = models.FloatField()  # 0-100 scale
-    weather_condition = models.ForeignKey(WeatherCondition, on_delete=models.SET_NULL, null=True, blank=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"{self.aircraft_type} at {self.altitude}ft - {self.efficiency_rating:.1f}% efficient"
-
-class SafetyFactor(models.Model):
-    """Model to track safety factors and risk assessments"""
-    SAFETY_CATEGORIES = [
-        ('weather', 'Weather'),
-        ('air_traffic', 'Air Traffic'),
-        ('terrain', 'Terrain'),
-        ('equipment', 'Equipment'),
-        ('crew', 'Crew'),
-        ('maintenance', 'Maintenance'),
-    ]
-    
-    RISK_LEVELS = [
-        ('low', 'Low Risk'),
-        ('medium', 'Medium Risk'),
-        ('high', 'High Risk'),
-        ('critical', 'Critical Risk'),
-    ]
-    
-    category = models.CharField(max_length=20, choices=SAFETY_CATEGORIES)
-    risk_level = models.CharField(max_length=15, choices=RISK_LEVELS)
-    description = models.TextField()
-    location_lat = models.FloatField(null=True, blank=True)
-    location_lon = models.FloatField(null=True, blank=True)
-    altitude_min = models.FloatField(null=True, blank=True)  # in feet
-    altitude_max = models.FloatField(null=True, blank=True)  # in feet
-    active = models.BooleanField(default=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"{self.category} - {self.risk_level}"
-    
-    def get_risk_score(self):
-        """Calculate risk score (0-100, higher = more risk)"""
-        risk_scores = {
-            'low': 25, 'medium': 50, 'high': 75, 'critical': 100
-        }
-        return risk_scores.get(self.risk_level, 50)
-
+        return f"{self.registration} ({self.hex_code})"
 class OperationalConstraint(models.Model):
-    """Model to track operational constraints like air traffic, restricted zones, etc."""
-    CONSTRAINT_TYPES = [
-        ('air_traffic', 'Air Traffic Control'),
-        ('restricted_zone', 'Restricted Zone'),
-        ('military_zone', 'Military Zone'),
-        ('no_fly_zone', 'No-Fly Zone'),
-        ('congestion', 'Congestion'),
-        ('maintenance', 'Maintenance'),
-        ('runway_closed', 'Runway Closed'),
-        ('gate_unavailable', 'Gate Unavailable'),
-    ]
-    
-    constraint_type = models.CharField(max_length=20, choices=CONSTRAINT_TYPES)
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    location_lat = models.FloatField()
-    location_lon = models.FloatField()
-    radius = models.FloatField(default=10)  # in miles
-    altitude_min = models.FloatField(default=0)  # in feet
-    altitude_max = models.FloatField(default=50000)  # in feet
-    start_time = models.DateTimeField(null=True, blank=True)
-    end_time = models.DateTimeField(null=True, blank=True)
-    active = models.BooleanField(default=True)
-    impact_score = models.FloatField(default=50)  # 0-100, higher = more impact
+    aircraft = models.ForeignKey(AircraftProfile, on_delete=models.CASCADE, null=True, blank=True)
+    constraint_type = models.CharField(max_length=100)
+    value = models.FloatField()
+    unit = models.CharField(max_length=20, default='N/A')
+    notes = models.TextField()
     
     def __str__(self):
-        return f"{self.constraint_type}: {self.name}"
-    
-    def is_active_now(self):
-        """Check if constraint is currently active"""
-        if not self.active:
-            return False
-        
-        from django.utils import timezone
-        now = timezone.now()
-        
-        if self.start_time and now < self.start_time:
-            return False
-        if self.end_time and now > self.end_time:
-            return False
-        
-        return True
-
-class Waypoint(models.Model):
-    """Model to represent waypoints in the high-dimensional optimization space"""
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    altitude = models.FloatField()  # in feet
-    waypoint_type = models.CharField(max_length=20, choices=[
-        ('nav', 'Navigation'),
-        ('weather', 'Weather Avoidance'),
-        ('traffic', 'Traffic Avoidance'),
-        ('terrain', 'Terrain Avoidance'),
-        ('restriction', 'Restriction Avoidance'),
-    ])
-    sequence_number = models.IntegerField()
-    route = models.ForeignKey('Route', on_delete=models.CASCADE, related_name='waypoints')
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['sequence_number']
-    
-    def __str__(self):
-        return f"Waypoint {self.sequence_number} at {self.latitude}, {self.longitude}"
+        return f"{self.constraint_type} for {self.aircraft.registration}"
 
 class Flight(models.Model):
     """Flight model representing flights between airports"""
@@ -218,27 +65,7 @@ class Flight(models.Model):
     airline = models.CharField(max_length=100, default='Generic Airlines')
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, default='USD')
-    
-    # New fields for enhanced optimization
-    weather_conditions = models.ManyToManyField(WeatherCondition, blank=True)
-    fuel_efficiency = models.ForeignKey(FuelEfficiency, on_delete=models.SET_NULL, null=True, blank=True)
-    safety_factors = models.ManyToManyField(SafetyFactor, blank=True)
-    operational_constraints = models.ManyToManyField(OperationalConstraint, blank=True)
-    flight_waypoints = models.ManyToManyField(Waypoint, blank=True, related_name='flights')
-    
-    # High complexity optimization fields
-    optimization_complexity = models.CharField(max_length=20, choices=[
-        ('low', 'Low Complexity'),
-        ('medium', 'Medium Complexity'),
-        ('high', 'High Complexity'),
-        ('extreme', 'Extreme Complexity'),
-    ], default='medium')
-    waypoint_count = models.IntegerField(default=0)
-    weather_data_points = models.IntegerField(default=0)
-    congestion_zones = models.IntegerField(default=0)
-    altitude_penalties = models.IntegerField(default=0)
-    delay_penalties = models.IntegerField(default=0)
-    
+        
     def __str__(self):
         return f"{self.flight_number}: {self.origin.code} → {self.destination.code}"
     
@@ -338,13 +165,11 @@ class Flight(models.Model):
         base_score = complexity_scores.get(self.optimization_complexity, 50)
         
         # Add penalties for various factors
-        waypoint_penalty = min(20, self.waypoint_count * 0.1)
-        weather_penalty = min(15, self.weather_data_points * 0.05)
         congestion_penalty = min(10, self.congestion_zones * 0.2)
         altitude_penalty = min(10, self.altitude_penalties * 0.1)
         delay_penalty = min(10, self.delay_penalties * 0.1)
         
-        total_score = base_score + waypoint_penalty + weather_penalty + congestion_penalty + altitude_penalty + delay_penalty
+        total_score = base_score + congestion_penalty + altitude_penalty + delay_penalty
         return min(100, total_score)
 
     class Meta:
@@ -362,22 +187,6 @@ class Route(models.Model):
     stops = models.ManyToManyField(Airport, through='RouteStop')
     created_at = models.DateTimeField(auto_now_add=True)
     
-    # New fields for enhanced optimization
-    weather_conditions = models.ManyToManyField(WeatherCondition, blank=True)
-    fuel_efficiency = models.ForeignKey(FuelEfficiency, on_delete=models.SET_NULL, null=True, blank=True)
-    safety_factors = models.ManyToManyField(SafetyFactor, blank=True)
-    operational_constraints = models.ManyToManyField(OperationalConstraint, blank=True)
-    route_waypoints = models.ManyToManyField(Waypoint, blank=True, related_name='routes')
-    
-    # High complexity optimization fields
-    optimization_complexity = models.CharField(max_length=20, choices=[
-        ('low', 'Low Complexity'),
-        ('medium', 'Medium Complexity'),
-        ('high', 'High Complexity'),
-        ('extreme', 'Extreme Complexity'),
-    ], default='medium')
-    waypoint_count = models.IntegerField(default=0)
-    weather_data_points = models.IntegerField(default=0)
     congestion_zones = models.IntegerField(default=0)
     altitude_penalties = models.IntegerField(default=0)
     delay_penalties = models.IntegerField(default=0)
@@ -401,39 +210,39 @@ class Route(models.Model):
             'fuel_percentage': (self.total_fuel_cost / self.total_cost * 100) if self.total_cost > 0 else 0
         }
     
-    def get_weather_impact_score(self):
-        """Calculate total weather impact score for the route"""
-        total_impact = 0
-        weather_count = self.weather_conditions.count()
+    # def get_weather_impact_score(self):
+    #     """Calculate total weather impact score for the route"""
+    #     total_impact = 0
+    #     weather_count = self.weather_conditions.count()
         
-        if weather_count > 0:
-            for weather in self.weather_conditions.all():
-                total_impact += weather.get_impact_score()
-            return total_impact / weather_count
-        return 0
+    #     if weather_count > 0:
+    #         for weather in self.weather_conditions.all():
+    #             total_impact += weather.get_impact_score()
+    #         return total_impact / weather_count
+    #     return 0
     
-    def get_safety_risk_score(self):
-        """Calculate total safety risk score for the route"""
-        total_risk = 0
-        safety_count = self.safety_factors.count()
+    # def get_safety_risk_score(self):
+    #     """Calculate total safety risk score for the route"""
+    #     total_risk = 0
+    #     safety_count = self.safety_factors.count()
         
-        if safety_count > 0:
-            for safety in self.safety_factors.all():
-                total_risk += safety.get_risk_score()
-            return total_risk / safety_count
-        return 0
+    #     if safety_count > 0:
+    #         for safety in self.safety_factors.all():
+    #             total_risk += safety.get_risk_score()
+    #         return total_risk / safety_count
+    #     return 0
     
-    def get_operational_constraint_score(self):
-        """Calculate total operational constraint impact for the route"""
-        total_impact = 0
-        constraint_count = self.operational_constraints.count()
+    # def get_operational_constraint_score(self):
+    #     """Calculate total operational constraint impact for the route"""
+    #     total_impact = 0
+    #     constraint_count = self.operational_constraints.count()
         
-        if constraint_count > 0:
-            for constraint in self.operational_constraints.all():
-                if constraint.is_active_now():
-                    total_impact += constraint.impact_score
-            return total_impact / constraint_count
-        return 0
+    #     if constraint_count > 0:
+    #         for constraint in self.operational_constraints.all():
+    #             if constraint.is_active_now():
+    #                 total_impact += constraint.impact_score
+    #         return total_impact / constraint_count
+    #     return 0
     
     def get_complexity_score(self):
         """Calculate overall complexity score for high-dimensional optimization"""
@@ -442,14 +251,11 @@ class Route(models.Model):
         }
         base_score = complexity_scores.get(self.optimization_complexity, 50)
         
-        # Add penalties for various factors
-        waypoint_penalty = min(20, self.waypoint_count * 0.1)
-        weather_penalty = min(15, self.weather_data_points * 0.05)
         congestion_penalty = min(10, self.congestion_zones * 0.2)
         altitude_penalty = min(10, self.altitude_penalties * 0.1)
         delay_penalty = min(10, self.delay_penalties * 0.1)
         
-        total_score = base_score + waypoint_penalty + weather_penalty + congestion_penalty + altitude_penalty + delay_penalty
+        total_score = base_score  + congestion_penalty + altitude_penalty + delay_penalty
         return min(100, total_score)
     
     def get_optimization_summary(self):
@@ -458,30 +264,12 @@ class Route(models.Model):
             'complexity': {
                 'level': self.optimization_complexity,
                 'score': self.get_complexity_score(),
-                'waypoints': self.waypoint_count,
-                'weather_data': self.weather_data_points,
                 'congestion_zones': self.congestion_zones,
                 'penalties': {
                     'altitude': self.altitude_penalties,
                     'delay': self.delay_penalties
                 }
             },
-            'weather': {
-                'impact_score': self.get_weather_impact_score(),
-                'conditions_count': self.weather_conditions.count()
-            },
-            'safety': {
-                'risk_score': self.get_safety_risk_score(),
-                'factors_count': self.safety_factors.count()
-            },
-            'operational': {
-                'constraint_score': self.get_operational_constraint_score(),
-                'constraints_count': self.operational_constraints.count()
-            },
-            'fuel_efficiency': {
-                'rating': self.fuel_efficiency_rating,
-                'total_cost': self.total_fuel_cost
-            }
         }
 
 class RouteStop(models.Model):
@@ -494,4 +282,4 @@ class RouteStop(models.Model):
     departure_time = models.TimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['stop_order'] 
+        ordering = ['stop_order']

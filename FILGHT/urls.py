@@ -21,25 +21,22 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/all_ airports/', views.api_airports, name='api_airports'),
     path('', views.home, name='home'),
     path('optimize/', views.OptimizeView.as_view(), name='optimize'),
     path('choices/', views.choices_view, name='choices'),
-    path('flight-info/', views.flight_info, name='flight_info'),
     path('map/', views.map_view, name='map'),
-    path('api/airports/', views.AirportListView.as_view(), name='api-airports'),
+    path('turbulence/', views.turbulence, name='turbulence'),
     path('api/stops/', views.api_stops, name='api_stops'),
     path('api/all_airports/', views.api_all_airports, name='api_all_airports'),
-    path('report/', views.report_view, name='report'),
-    path('api/flights/', views.api_flights_json, name='api-flights'),
-    path('api/flights/dynamic/', views.api_flights_dynamic, name='api-flights-dynamic'),
-    path('api/report/', views.ReportDataView.as_view(), name='api-report'),
-    
+    path('report/', views.report, name='Report'),
+    path('api/full-report/', views.full_report, name='full_report'),
+
     path('chat-bot/', views.chat_bot, name='chat_bot'),
     path('api/chat-gemini/', views.chat_gemini_api, name='chat_gemini_api'),
     path('api/ask-ai/', views.api_ask_ai, name='api_ask_ai'),
 
     path('api/qaoa-predict/', views.QAOAPredictView.as_view(), name='api-qaoa-predict'),
+    path('api/flights/', views.api_flights, name='api_flights'),
+    path('api/flight/', views.api_flights, name='api_flight'),
 ]
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)      

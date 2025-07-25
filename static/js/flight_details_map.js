@@ -45,26 +45,40 @@ document.addEventListener('DOMContentLoaded', function() {
         attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Example: Fetch flight details from API (replace with actual API call)
+    // Fetch routes from API and show only QAOA, Dijkstra, Alternative
     fetch('/api/flights/')
     .then(response => response.json())
     .then(data => {
-        if (data.length > 0) {
-            var flight = data[0]; // Replace with selected flight
-            var latlngs = [
-                [flight.origin.latitude, flight.origin.longitude],
-                [flight.destination.latitude, flight.destination.longitude]
-            ];
-            L.polyline(latlngs, {color: 'green'}).addTo(map);
-            L.marker(latlngs[0]).addTo(map).bindPopup(flight.origin.name);
-            L.marker(latlngs[1]).addTo(map).bindPopup(flight.destination.name);
-            map.fitBounds(latlngs);
-            // Fill flight summary
+        // Filter and order routes: QAOA (blue), Dijkstra (red), Alternative (red)
+        function getFirstRouteByMethod(routes, methodName) {
+            return routes.find(r => r.method && r.method.toLowerCase() === methodName);
+        }
+        function getFirstAlternative(routes) {
+            return routes.find(r => r.method && r.method.toLowerCase().includes('alternative'));
+        }
+        const qaoaRoute = getFirstRouteByMethod(data, 'qaoa');
+        const dijkstraRoute = getFirstRouteByMethod(data, 'dijkstra');
+        const altRoute = getFirstAlternative(data);
+        const routes = [qaoaRoute, dijkstraRoute, altRoute].filter(Boolean);
+        routes.forEach((route, idx) => {
+            let color = idx === 0 ? 'blue' : 'red';
+            if (route.coordinates && route.coordinates.length > 1) {
+                const polyline = L.polyline(route.coordinates, {color: color, weight: 5, opacity: 0.8}).addTo(map);
+                // Add markers for start/end
+                const startMarker = L.marker(route.coordinates[0]).addTo(map).bindPopup(route.origin_name || 'Origin');
+                const endMarker = L.marker(route.coordinates[route.coordinates.length-1]).addTo(map).bindPopup(route.destination_name || 'Destination');
+                if (idx === 0) {
+                    map.fitBounds(route.coordinates);
+                }
+            }
+        });
+        // Fill flight summary and cost breakdown for first route
+        if (routes.length > 0) {
+            var route = routes[0];
             var summary = document.getElementById('flight-summary');
-            summary.innerHTML = `<li>Flight: ${flight.flight_number}</li><li>From: ${flight.origin.code}</li><li>To: ${flight.destination.code}</li>`;
-            // Fill cost breakdown
+            summary.innerHTML = `<li>Route: ${route.method || 'QAOA'}</li><li>From: ${route.origin_code || ''}</li><li>To: ${route.destination_code || ''}</li>`;
             var cost = document.getElementById('cost-breakdown');
-            cost.innerHTML = `<li>Price: $${flight.price}</li><li>Currency: ${flight.currency}</li>`;
+            cost.innerHTML = `<li>Price: $${route.price || ''}</li><li>Currency: ${route.currency || ''}</li>`;
         }
     });
 

@@ -1,437 +1,1319 @@
-{% extends 'base.html' %}
-{% block content %}
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono">
-<link rel="stylesheet" href="/static/css/report.css"> 
-<div class="container mt-4">
-    <h2 class="text-shadow">Flight Optimization Report</h2>
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h4 class="mb-0"><i class="fas fa-plane"></i> Flight Data Selection</h4>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flight Optimization Report</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="/static/css/navbar.css" />
+    <link rel="stylesheet" href="/static/css/report.css" />
+  </head>
+  <body>
+    <nav class="menu">
+      <ul>
+        <li>
+          <a href="/" class="{% if request.path == '/' %}active{% endif %}"
+            >Home</a
+          >
+        </li>
+        <li>
+          <a
+            href="/optimize/"
+            class="{% if 'optimize' in request.path %}active{% endif %}"
+            >Optimize</a
+          >
+        </li>
+        <li>
+          <a
+            href="/report/"
+            class="{% if 'report' in request.path %}active{% endif %}"
+            >Report</a
+          >
+        </li>
+        <!-- <li><a href="/flight-info/" class="{% if 'flight-info' in request.path %}active{% endif %}">Flight Info</a>
+            </li> -->
+        <li>
+          <a
+            href="/map/"
+            class="{% if 'map' in request.path %}active{% endif %}"
+            >Map</a
+          >
+        </li>
+        <li>
+          <a
+            href="/about/"
+            class="{% if 'about' in request.path %}active{% endif %}"
+            >About</a
+          >
+        </li>
+        <li>
+          <a
+            href="/turbulence/"
+            class="{% if 'contact' in request.path %}active{% endif %}"
+            >Turbulence</a
+          >
+        </li>
+      </ul>
+    </nav>
+    <div class="main-container">
+      <div class="page-header">
+        <!-- Route Map Card -->
+        <div class="report-card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-route"></i>
+              Route Map
+            </h3>
+          </div>
+          <div class="card-body">
+            <div
+              id="report-route-map"
+              style="
+                height: 350px;
+                width: 100%;
+                border-radius: 8px;
+                border: 1px solid #e0e0e0;
+              "
+            ></div>
+            <ul id="report-route-summary" class="mt-3"></ul>
+          </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md">
-                    <label for="airIdSelect" class="form-label">From Airport</label>
-                    <select class="form-select" id="airIdSelect">
-                        <option value="">Select origin airport...</option>
-                        {% for airport in airports %}
-                        <option value="{{ airport.airid }}">{{ airport.airid }} - {{ airport.city }}, {{ airport.country }}</option>
-                        {% endfor %}
-                    </select>
+        <h1 class="page-title">
+          <i class="fas fa-plane"></i>
+          Flight Optimization Report
+        </h1>
+        <p class="page-subtitle">
+          Comprehensive flight analysis with weather, fuel efficiency, safety,
+          and operational data
+        </p>
+      </div>
+
+      <div class="input-card">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="origin" class="form-label">
+              <i class="fas fa-plane-departure"></i> From Airport
+            </label>
+            <!-- Origin Dropdown -->
+            <div class="searchable-dropdown" id="originDropdown">
+              <input
+                type="text"
+                class="dropdown-input"
+                id="origin"
+                placeholder="Type to search origin airport..."
+                autocomplete="off"
+              />
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+              <div class="dropdown-menu" id="originMenu">
+                {% for airport in airports %}
+                <div
+                  class="dropdown-item"
+                  data-value="{{ airport.code }}"
+                  data-text="{{ airport.country }}, {{ airport.city }} ({{ airport.code }}) - {{ airport.name }}"
+                >
+                  {{ airport.country }}, {{ airport.city }} ({{ airport.code }})
+                  - {{ airport.name }}
                 </div>
-                <div class="col-md">
-                    <label for="airIdSelect" class="form-label">To Airport</label>
-                    <select class="form-select" id="airIdSelect">
-                        <option value="">Select destination airport...</option>
-                        {% for airport in airports %}
-                        <option value="{{ airport.airid }}">{{ airport.airid }} - {{ airport.city }}, {{ airport.country }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                {% endfor %}
+              </div>
             </div>
-            <div class="mt-3">
-                <button type="button" class="btn btn-primary" onclick="filterReportData()">
-                    <i class="fas fa-filter"></i> Filter Report
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="destination" class="form-label">
+              <i class="fas fa-plane-arrival"></i> To Airport
+            </label>
+            <!-- Destination Dropdown -->
+            <div class="searchable-dropdown" id="destinationDropdown">
+              <input
+                type="text"
+                class="dropdown-input"
+                id="destination"
+                placeholder="Type to search destination airport..."
+                autocomplete="off"
+              />
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+              <div class="dropdown-menu" id="destinationMenu">
+                {% for airport in airports %}
+                <div
+                  class="dropdown-item"
+                  data-value="{{ airport.code }}"
+                  data-text="{{ airport.country }}, {{ airport.city }} ({{ airport.code }}) - {{ airport.name }}"
+                >
+                  {{ airport.country }}, {{ airport.city }} ({{ airport.code }})
+                  - {{ airport.name }}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="aircraftCode" class="form-label">
+              <i class="fas fa-plane"></i> Aircraft Code (ICAO)
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="aircraftCode"
+              value="60006b"
+              readonly
+              placeholder="Boeing 747SR (Constant)"
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="distanceMiles" class="form-label">
+              <i class="fas fa-route"></i> Distance (Auto-calculated)
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="distanceMiles"
+              readonly
+              placeholder="Calculated automatically from airports"
+            />
+          </div>
+        </div>
+        <div class="text-center">
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="filterBtn"
+            onclick="filterReportData()"
+          >
+            <i class="fas fa-search"></i> Generate Comprehensive Report
+          </button>
+        </div>
+      </div>
+
+      <div id="reportContainer" class="report-container">
+        <!-- Flight & Weather Information Card -->
+        <div class="report-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-info-circle"></i>
+              Flight & Weather Information
+            </h3>
+            <button
+              class="copy-btn"
+              onclick="copyCardData('flight')"
+              title="Copy flight data"
+            >
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+          <div class="card-body" id="flightSection">
+            <!-- Flight and weather data will be populated here -->
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Fuel Efficiency Card -->
+          <div class="col-md-6">
+            <div class="report-card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-gas-pump"></i>
+                  Fuel Efficiency
+                </h3>
+                <button
+                  class="copy-btn"
+                  onclick="copyCardData('fuel')"
+                  title="Copy fuel data"
+                >
+                  <i class="fas fa-copy"></i>
                 </button>
-                <button type="button" class="btn btn-secondary" onclick="resetFilters()">
-                    <i class="fas fa-refresh"></i> Reset
+              </div>
+              <div class="card-body" id="fuelSection">
+                <!-- Fuel data will be populated here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety Factors Card -->
+          <div class="col-md-6">
+            <div class="report-card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-shield-alt"></i>
+                  Safety Factors
+                </h3>
+                <button
+                  class="copy-btn"
+                  onclick="copyCardData('safety')"
+                  title="Copy safety data"
+                >
+                  <i class="fas fa-copy"></i>
                 </button>
+              </div>
+              <div class="card-body" id="safetySection">
+                <!-- Safety data will be populated here -->
+              </div>
             </div>
+          </div>
         </div>
+
+        <!-- Operational Constraints Card -->
+        <div class="report-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-cogs"></i>
+              Operational Constraints
+            </h3>
+            <button
+              class="copy-btn"
+              onclick="copyCardData('operational')"
+              title="Copy operational data"
+            >
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+          <div class="card-body" id="operationalSection">
+            <!-- Operational data will be populated here -->
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+          <button class="btn btn-primary me-3" onclick="copyAllData()">
+            <i class="fas fa-copy"></i> Copy All Data
+          </button>
+          <button class="btn btn-primary" onclick="sendAllCardsToAI()">
+            <i class="fas fa-robot"></i> Chat With AI
+          </button>
+        </div>
+      </div>
     </div>
-    {% if data_source %}
-    <div class="data-source-badge data-source-{{ data_source }}">
-        Data Source: {{ data_source|title }}
-    </div>
-    {% endif %}
-    <div class="row g-4 mt-2">
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white"><i class="fas fa-cloud-sun"></i> Weather Report</div>
-                <div class="card-body">
-                    <div id="weather-summary" class="mb-2">No data</div>
-                    <div id="weather-table"></div>
-                    <div class="mb-2">
-                        <label for="weather-cities-select">Select cities for live weather (hold Ctrl to select multiple):</label>
-                        <select id="weather-cities-select" class="form-select" multiple>
-                            {% for airport in airports %}
-                                <option value="{{ airport.city }}">{{ airport.city }} ({{ airport.country }})</option>
-                            {% endfor %}
-                        </select>
-                        <button class="btn btn-sm btn-info mt-2" onclick="fetchLiveWeatherFromSelect()">Get Live Weather</button>
-                    </div>
-                    <div id="live-weather-result"></div>
-                    <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('weather')">Ask To AI</button> -->
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-header bg-success text-white"><i class="fas fa-plane-departure"></i> Air Traffic</div>
-                <div class="card-body">
-                    <div id="air-traffic-summary" class="mb-2">No data</div>
-                <div id="air-traffic-table"></div>
-                <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('operational_constraints')">Ask To AI</button> -->
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-header bg-warning text-dark"><i class="fas fa-gas-pump"></i> Fuel Efficiency</div>
-                <div class="card-body">
-                    <div id="fuel-efficiency-summary" class="mb-2">No data</div>
-                    <div id="fuel-efficiency-table"></div>
-                    <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('fuel_efficiency')">Ask To AI</button> -->
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-header bg-danger text-white"><i class="fas fa-shield-alt"></i> Safety Factor</div>
-                <div class="card-body">
-                    <div id="safety-factor-summary" class="mb-2">No data</div>
-                    <div id="safety-factor-table"></div>
-                    <!-- <button class="glow-on-hover" type="button" onclick="sendCardToAI('safety_factors')">Ask To AI</button> -->
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="mt-4">
-        <button class="btn btn-success mb-2" onclick="sendAllCardsToAI()">Chat With AI</button>
-        <a href="/route/" class="btn btn-primary">View Optimized Route</a>
-    </div>
-</div>
-<!-- Pass flight data to JavaScript -->
-{{ api_flight_data|json_script:"flight-data" }}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-<script>
-function renderTable(data) {
-    if (!data || data.length === 0) return '<em>No data available</em>';
-    let keys = Object.keys(data[0]);
-    let table = '<table><thead><tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr></thead><tbody>';
-    table += data.map(row => '<tr>' + keys.map(k => `<td>${row[k]}</td>`).join('') + '</tr>').join('');
-    table += '</tbody></table>';
-    return table;
-}
-function renderSummary(data, key) {
-    if (!data || data.length === 0) return '<em>No data</em>';
-    if (key === 'weather') {
-        return data.map(d => `${d.type || d.condition || 'N/A'} (${d.severity || d.level || 'N/A'})`).join(', ');
-    }
-    if (key === 'air_traffic' || key === 'operational_constraints') {
-        return data.map(d => d.status || d.level || d.type || 'N/A').join(', ');
-    }
-    if (key === 'fuel_efficiency') {
-        return data.map(d => `${d.aircraft_type || 'N/A'}: ${d.efficiency || d.value || 'N/A'}`).join(', ');
-    }
-    if (key === 'safety_factors') {
-        return data.map(d => `${d.factor || d.type || 'N/A'}: ${d.value || d.score || 'N/A'}`).join(', ');
-    }
-    return '...';
-}
 
-function showConnectionStatus(message, isSuccess) {
-    const statusDiv = document.getElementById('connection-status');
-    const statusText = document.getElementById('status-text');
-    statusDiv.style.display = 'block';
-    statusDiv.className = `connection-status ${isSuccess ? 'connection-success' : 'connection-error'}`;
-    statusText.textContent = message;
-}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // Render 3 routes on the report map: QAOA (blue), Dijkstra (red), Alternative (red)
+      document.addEventListener("DOMContentLoaded", function () {
+        var map = L.map("report-route-map").setView([20, 0], 2);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+        }).addTo(map);
 
-function initializeSupabaseData() {
-    fetch('/api/init-supabase/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showConnectionStatus('Supabase data initialized successfully! Refreshing page...', true);
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            showConnectionStatus('Failed to initialize Supabase data: ' + data.error, false);
-        }
-    })
-    .catch(error => {
-        showConnectionStatus('Error initializing Supabase data: ' + error.message, false);
-    });
-}
-
-let flightData = [];
-let currentReportData = {};
-
-// Load flight data from Django context
-// DEBUG: Log flightData on page load
-console.log('Loading flightData from context...');
-document.addEventListener('DOMContentLoaded', function() {
-    const flightDataElement = document.getElementById('flight-data');
-    if (flightDataElement) {
-        flightData = JSON.parse(flightDataElement.textContent || '[]');
-        console.log('Loaded flight data:', flightData.length, 'records');
-        console.log('flightData sample:', flightData[0]);
-    } else {
-        console.warn('No flight-data element found in DOM!');
-    }
-    // Store initial report data
-    currentReportData = {
-        weather: [],
-        operational_constraints: [],
-        fuel_efficiency: [],
-        safety_factors: []
-    };
-});
-
-function filterReportData() {
-    console.log('Filter button clicked');
-    console.log('flightData:', flightData);
-    const airId = document.getElementById('airIdSelect').value;
-    // Remove condition and alertStatus logic
-    let filteredData = flightData;
-    // Filter by Air ID
-    if (airId) {
-        filteredData = filteredData.filter(flight => flight['air id'] === airId);
-    }
-    // Remove filter by condition and alert status
-    console.log('Filtered data:', filteredData);
-    if (filteredData.length === 0) {
-        alert('No flight data found for the selected criteria');
-        return;
-    }
-    // Transform filtered data into report format
-    const weather_data = [];
-    const air_traffic_data = [];
-    const fuel_efficiency_data = [];
-    const safety_factors_data = [];
-    for (const record of filteredData) {
-        // Weather data
-        weather_data.push({
-            'type': record.conditions || 'unknown',
-            'severity': 'Medium',
-            'visibility': `${record['distance_km'] || 0}km`,
-            'wind_speed': `${record['wind speed kmh'] || 0} km/h`,
-            'temperature': `${record['temperature'] || 0}°C`,
-            'humidity': `${record['humidity percent'] || 0}%`,
-            'pressure': `${record['pressure hpa'] || 0} hPa`,
-            'precipitation': `${record['precipitation mm'] || 0} mm`
-        });
-        // Air traffic data
-        air_traffic_data.push({
-            'type': `Flight ${record['air id'] || 'Unknown'}`,
-            'status': record['alert_status'] || 'normal',
-            'level': record['alert_status'] == 'warning' ? 'Medium' : 'Low',
-            'description': `Flight monitoring for ${record['air id'] || 'Unknown'}`,
-            'duration': 'Continuous',
-            'altitude': `${record['altitude_ft'] || 0} ft`,
-            'speed': `${record['speed_knots'] || 0} knots`,
-            'heading': `${record['heading_deg'] || 0}°`
-        });
-        // Fuel efficiency data
-        fuel_efficiency_data.push({
-            'aircraft_type': 'Commercial Aircraft',
-            'efficiency': `${record['fuel_efficiency_kmpl'] || 0} km/L`,
-            'fuel_consumption': `${record['fuel_consumption_lph'] || 0} L/h`,
-            'emissions': `${record['fuel_flow_kgh'] || 0} kg/h CO2`,
-            'optimization_potential': `${100 - (record['engine_efficiency_percent'] || 0)}%`,
-            'engine_rpm': record['engine_rpm'] || 0,
-            'fuel_remaining': `${record['fuel_remaining_kg'] || 0} kg`
-        });
-        // Safety factors data
-        safety_factors_data.push({
-            'factor': `Flight ${record['air id'] || 'Unknown'} Safety`,
-            'value': record['alert_status'] || 'normal',
-            'score': `${record['engine_efficiency_percent'] || 0}/100`,
-            'risk_level': record['alert_status'] == 'warning' ? 'Medium' : 'Low',
-            'recommendations': `Monitor ${record['air id'] || 'Unknown'} flight conditions`,
-            'vibration_level': record['vibration_level'] || 0,
-            'tilt_angle': `${record['tilt_angle_deg'] || 0}°`
-        });
-    }
-    // Update current report data
-    currentReportData = {
-        weather: weather_data,
-        operational_constraints: air_traffic_data,
-        fuel_efficiency: fuel_efficiency_data,
-        safety_factors: safety_factors_data
-    };
-    // Update the display
-    updateReportDisplay();
-}
-
-function updateReportDisplay() {
-    // Weather Report Card
-    const w = currentReportData.weather[0];
-    document.getElementById('weather-summary').innerHTML = w
-        ? `<strong>${w.type}</strong> (${w.severity})<br>
-           <span>Visibility: ${w.visibility}</span><br>
-           <span>Wind: ${w.wind_speed}</span><br>
-           <span>Temp: ${w.temperature}</span><br>
-           <span>Humidity: ${w.humidity}</span><br>
-           <span>Pressure: ${w.pressure}</span><br>
-           <span>Precipitation: ${w.precipitation}</span>`
-        : '<em>No data</em>';
-    document.getElementById('weather-table').innerHTML = '';
-
-    // Air Traffic Card
-    const a = currentReportData.operational_constraints[0];
-    document.getElementById('air-traffic-summary').innerHTML = a
-        ? `<strong>${a.type}</strong><br>
-           Status: ${a.status}<br>
-           Level: ${a.level}<br>
-           Altitude: ${a.altitude}<br>
-           Speed: ${a.speed}<br>
-           Heading: ${a.heading}`
-        : '<em>No data</em>';
-    document.getElementById('air-traffic-table').innerHTML = '';
-
-    // Fuel Efficiency Card
-    const f = currentReportData.fuel_efficiency[0];
-    document.getElementById('fuel-efficiency-summary').innerHTML = f
-        ? `<strong>${f.aircraft_type}:</strong> ${f.efficiency}<br>
-           Fuel Consumption: ${f.fuel_consumption}<br>
-           Emissions: ${f.emissions}<br>
-           Optimization: ${f.optimization_potential}<br>
-           Engine RPM: ${f.engine_rpm}<br>
-           Fuel Remaining: ${f.fuel_remaining}`
-        : '<em>No data</em>';
-    document.getElementById('fuel-efficiency-table').innerHTML = '';
-
-    // Safety Factor Card
-    const s = currentReportData.safety_factors[0];
-    document.getElementById('safety-factor-summary').innerHTML = s
-        ? `<strong>${s.factor}</strong><br>
-           Value: ${s.value}<br>
-           Score: ${s.score}<br>
-           Risk: ${s.risk_level}<br>
-           Vibration: ${s.vibration_level}<br>
-           Tilt: ${s.tilt_angle}<br>
-           Recommendations: ${s.recommendations}`
-        : '<em>No data</em>';
-    document.getElementById('safety-factor-table').innerHTML = '';
-}
-
-function showFilterSummary(count, airId) {
-    let summary = `Showing ${count} flight record(s)`;
-    if (airId) summary += ` for Air ID: ${airId}`;
-    // Create or update summary element
-    let summaryElement = document.getElementById('filter-summary');
-    if (!summaryElement) {
-        summaryElement = document.createElement('div');
-        summaryElement.id = 'filter-summary';
-        summaryElement.className = 'alert alert-info mt-3';
-        document.querySelector('.container').insertBefore(summaryElement, document.querySelector('.data-source-badge'));
-    }
-    summaryElement.innerHTML = `<i class="fas fa-info-circle"></i> ${summary}`;
-}
-
-function resetFilters() {
-    // Reset select elements
-    document.getElementById('airIdSelect').value = '';
-    // Remove filter summary
-    const summaryElement = document.getElementById('filter-summary');
-    if (summaryElement) {
-        summaryElement.remove();
-    }
-    // Reload original data
-    location.reload();
-}
-
-// function sendCardToAI(cardKey) {
-//     // Get the first item of the relevant card data
-//     let cardData = currentReportData[cardKey] && currentReportData[cardKey][0];
-//     if (!cardData) {
-//         alert('No data to send to AI.');
-//         return;
-//     }
-//     // Store in localStorage
-//     localStorage.setItem('ai_card_data', JSON.stringify({
-//         card: cardKey,
-//         data: cardData
-//     }));
-//     // Redirect to chatbot page
-//     window.location.href = '/chat-bot/';
-// }
-
-function sendAllCardsToAI() {
-    // Send all four card data to AI
-    localStorage.setItem('ai_card_data', JSON.stringify({
-        card: 'all',
-        data: currentReportData
-    }));
-    window.location.href = '/chat-bot/';
-}
-
-function fetchLiveWeatherFromSelect() {
-    const select = document.getElementById('weather-cities-select');
-    const cities = Array.from(select.selectedOptions).map(opt => opt.value);
-    if (!cities.length) {
-        alert('Please select at least one city.');
-        return;
-    }
-    fetch('/api/live-weather/', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({cities: cities})
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            document.getElementById('live-weather-result').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
-        } else {
-            let html = '<h5>Live Weather:</h5>';
-            data.forecasts.forEach(cityForecasts => {
-                html += `<strong>${cityForecasts.city}</strong><ul>`;
-                if (cityForecasts.forecast && cityForecasts.forecast.length > 0) {
-                    cityForecasts.forecast.forEach(entry => {
-                        html += `<li>${entry.time}: ${entry.temp_c}°C, ${entry.description}</li>`;
-                    });
-                } else if (cityForecasts.error) {
-                    html += `<li>${cityForecasts.error}</li>`;
-                } else {
-                    html += `<li>No data</li>`;
+        fetch("/api/flights/")
+          .then((response) => response.json())
+          .then((data) => {
+            function getFirstRouteByMethod(routes, methodName) {
+              return routes.find(
+                (r) => r.method && r.method.toLowerCase() === methodName
+              );
+            }
+            function getFirstAlternative(routes) {
+              return routes.find(
+                (r) =>
+                  r.method && r.method.toLowerCase().includes("alternative")
+              );
+            }
+            const qaoaRoute = getFirstRouteByMethod(data, "qaoa");
+            const dijkstraRoute = getFirstRouteByMethod(data, "dijkstra");
+            const altRoute = getFirstAlternative(data);
+            const routes = [qaoaRoute, dijkstraRoute, altRoute].filter(Boolean);
+            let summaryHtml = "";
+            routes.forEach((route, idx) => {
+              let color = idx === 0 ? "blue" : "red";
+              if (route.coordinates && route.coordinates.length > 1) {
+                const polyline = L.polyline(route.coordinates, {
+                  color: color,
+                  weight: 5,
+                  opacity: 0.8,
+                }).addTo(map);
+                // Add markers for start/end
+                L.marker(route.coordinates[0])
+                  .addTo(map)
+                  .bindPopup(route.origin_name || "Origin");
+                L.marker(route.coordinates[route.coordinates.length - 1])
+                  .addTo(map)
+                  .bindPopup(route.destination_name || "Destination");
+                if (idx === 0) {
+                  map.fitBounds(route.coordinates);
                 }
-                html += '</ul>';
+                summaryHtml += `<li><strong>${
+                  route.method ||
+                  (idx === 0 ? "QAOA" : idx === 1 ? "Dijkstra" : "Alternative")
+                }</strong>: ${route.origin_name || ""} → ${
+                  route.destination_name || ""
+                } (${color})</li>`;
+              }
             });
-            document.getElementById('live-weather-result').innerHTML = html;
-        }
-    })
-    .catch(err => {
-        document.getElementById('live-weather-result').innerHTML = `<div class="alert alert-danger">${err}</div>`;
-    });
-}
+            document.getElementById("report-route-summary").innerHTML =
+              summaryHtml;
+          });
+      });
+    </script>
+    <script>
+      // Store all fetched data for copying
 
-fetch('/api/report/')
-.then(response => response.json())
-.then(data => {
-    // Update summaries
-    document.getElementById('weather-summary').innerHTML = renderSummary(data.weather, 'weather');
-    document.getElementById('fuel-efficiency-summary').innerHTML = renderSummary(data.fuel_efficiency, 'fuel_efficiency');
-    document.getElementById('safety-factor-summary').innerHTML = renderSummary(data.safety_factors, 'safety_factors');
-    document.getElementById('air-traffic-summary').innerHTML = renderSummary(data.operational_constraints, 'operational_constraints');
-    
-    // Update tables
-    document.getElementById('weather-table').innerHTML = renderTable(data.weather);
-    document.getElementById('fuel-efficiency-table').innerHTML = renderTable(data.fuel_efficiency);
-    document.getElementById('safety-factor-table').innerHTML = renderTable(data.safety_factors);
-    document.getElementById('air-traffic-table').innerHTML = renderTable(data.operational_constraints);
-    
-    // Check if we're using local data and show init button
-    const dataSourceBadge = document.querySelector('.data-source-local');
-    if (dataSourceBadge) {
-        document.getElementById('init-supabase-btn').style.display = 'inline-block';
-        document.getElementById('init-supabase-btn').addEventListener('click', initializeSupabaseData);
-    }
-})
-.catch(error => {
-    console.error('Error fetching report data:', error);
-    showConnectionStatus('Error loading report data: ' + error.message, false);
-    
-    // Show init button if there's an error
-    document.getElementById('init-supabase-btn').style.display = 'inline-block';
-    document.getElementById('init-supabase-btn').addEventListener('click', initializeSupabaseData);
-});
-</script>
-{% endblock %}
+      let reportData = {};
+
+      // Searchable Dropdown Functionality
+      class SearchableDropdown {
+        constructor(dropdownId, inputId, menuId) {
+          this.dropdown = document.getElementById(dropdownId);
+          this.input = document.getElementById(inputId);
+          this.menu = document.getElementById(menuId);
+          this.arrow = this.dropdown.querySelector(".dropdown-arrow");
+          this.items = Array.from(this.menu.querySelectorAll(".dropdown-item"));
+          this.selectedValue = "";
+          this.selectedText = "";
+          this.isOpen = false;
+
+          this.init();
+        }
+
+        init() {
+          // Store original placeholder
+          this.originalPlaceholder = this.input.placeholder;
+
+          // Click on input or arrow to toggle dropdown
+          this.input.addEventListener("click", () => {
+            if (!this.isOpen) {
+              this.open();
+            }
+          });
+
+          this.arrow.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.toggle();
+          });
+
+          // Input events for searching
+          this.input.addEventListener("input", () => {
+            if (this.isOpen) {
+              this.filter();
+            }
+          });
+
+          this.input.addEventListener("focus", () => {
+            this.input.removeAttribute("readonly");
+            if (!this.selectedValue) {
+              this.input.value = "";
+            }
+            this.open();
+          });
+
+          this.input.addEventListener("blur", () => {
+            // Delay to allow item click to register
+            setTimeout(() => {
+              if (!this.dropdown.contains(document.activeElement)) {
+                this.close();
+              }
+            }, 150);
+          });
+
+          // Item selection
+          this.items.forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+              e.preventDefault(); // Prevent blur event
+              this.selectItem(item);
+            });
+          });
+
+          // Close dropdown when clicking outside
+          document.addEventListener("click", (e) => {
+            if (!this.dropdown.contains(e.target)) {
+              this.close();
+            }
+          });
+
+          // Keyboard navigation
+          this.input.addEventListener("keydown", (e) => this.handleKeydown(e));
+        }
+
+        toggle() {
+          this.isOpen ? this.close() : this.open();
+        }
+
+        open() {
+          this.isOpen = true;
+          this.menu.classList.add("show");
+          this.arrow.classList.add("open");
+          this.filter(); // Show all items initially
+        }
+
+        close() {
+          this.isOpen = false;
+          this.menu.classList.remove("show");
+          this.arrow.classList.remove("open");
+          this.input.setAttribute("readonly", "true");
+
+          // If no valid selection, restore placeholder and clear input
+          if (!this.selectedValue) {
+            this.input.value = "";
+            this.input.placeholder = this.originalPlaceholder;
+          } else {
+            this.input.value = this.selectedText;
+          }
+        }
+
+        filter() {
+          const searchTerm = this.input.value.toLowerCase();
+          let visibleCount = 0;
+
+          this.items.forEach((item) => {
+            const text = item.textContent.toLowerCase();
+            const matches = text.includes(searchTerm);
+            item.style.display = matches ? "block" : "none";
+            if (matches) visibleCount++;
+          });
+
+          // Show "no results" message if no items match
+          let noResults = this.menu.querySelector(".no-results");
+          if (visibleCount === 0) {
+            if (!noResults) {
+              noResults = document.createElement("div");
+              noResults.className = "no-results";
+              noResults.textContent = "No airports found";
+              this.menu.appendChild(noResults);
+            }
+            noResults.style.display = "block";
+          } else if (noResults) {
+            noResults.style.display = "none";
+          }
+        }
+
+        selectItem(item) {
+          this.selectedValue = item.dataset.value;
+          this.selectedText = item.dataset.text;
+          this.input.value = this.selectedText;
+          this.items.forEach((i) => i.classList.remove("selected"));
+          item.classList.add("selected");
+          this.close();
+
+          // Trigger change event
+          this.input.dispatchEvent(new Event("change"));
+
+          // Call calculateDistance if both dropdowns have values
+          if (typeof calculateDistance === "function") {
+            calculateDistance();
+          }
+        }
+
+        handleKeydown(e) {
+          if (!this.isOpen) return;
+
+          const visibleItems = this.items.filter(
+            (item) => item.style.display !== "none"
+          );
+          const currentSelected = visibleItems.findIndex((item) =>
+            item.classList.contains("selected")
+          );
+
+          switch (e.key) {
+            case "ArrowDown":
+              e.preventDefault();
+              const nextIndex =
+                currentSelected < visibleItems.length - 1
+                  ? currentSelected + 1
+                  : 0;
+              this.highlightItem(visibleItems[nextIndex]);
+              break;
+            case "ArrowUp":
+              e.preventDefault();
+              const prevIndex =
+                currentSelected > 0
+                  ? currentSelected - 1
+                  : visibleItems.length - 1;
+              this.highlightItem(visibleItems[prevIndex]);
+              break;
+            case "Enter":
+              e.preventDefault();
+              if (currentSelected >= 0) {
+                this.selectItem(visibleItems[currentSelected]);
+              }
+              break;
+            case "Escape":
+              this.close();
+              break;
+          }
+        }
+
+        highlightItem(item) {
+          this.items.forEach((i) => i.classList.remove("selected"));
+          item.classList.add("selected");
+          item.scrollIntoView({ block: "nearest" });
+        }
+
+        getValue() {
+          return this.selectedValue;
+        }
+
+        setValue(value, text) {
+          this.selectedValue = value;
+          this.input.value = text;
+        }
+      }
+
+      // Initialize dropdowns when DOM is loaded
+      let originDropdown, destinationDropdown;
+
+      function filterReportData() {
+        const origin = originDropdown ? originDropdown.getValue() : "";
+        const destination = destinationDropdown
+          ? destinationDropdown.getValue()
+          : "";
+
+        if (!origin || !destination) {
+          alert("Please select both origin and destination airports.");
+          return;
+        }
+
+        const filterBtn = document.getElementById("filterBtn");
+        const originalText = filterBtn.innerHTML;
+
+        // Show loading state
+        filterBtn.innerHTML =
+          '<span class="loading-spinner"></span>Generating Report...';
+        filterBtn.disabled = true;
+
+        // Fetch comprehensive report data (distance calculated automatically)
+        fetch(`/api/full-report/?origin=${origin}&destination=${destination}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("API Response:", data); // Debug log
+
+            // Check for top-level error
+            if (data.error) {
+              throw new Error(data.error);
+            }
+
+            // Store the data
+            reportData = data;
+
+            // Update distance field with calculated value
+            if (data.distance_info) {
+              document.getElementById(
+                "distanceMiles"
+              ).value = `${data.distance_info.distance_miles} miles (${data.distance_info.distance_km} km)`;
+            }
+
+            // Populate sections with individual error handling
+            let sectionsPopulated = 0;
+
+            try {
+              populateFlightSection(data);
+              sectionsPopulated++;
+            } catch (error) {
+              console.error("Error populating flight section:", error);
+              document.getElementById("flightSection").innerHTML =
+                '<div class="alert alert-danger">Error loading flight data</div>';
+            }
+
+            try {
+              populateFuelSection(data);
+              sectionsPopulated++;
+            } catch (error) {
+              console.error("Error populating fuel section:", error);
+              document.getElementById("fuelSection").innerHTML =
+                '<div class="alert alert-danger">Error loading fuel efficiency data</div>';
+            }
+
+            try {
+              populateSafetySection(data);
+              sectionsPopulated++;
+            } catch (error) {
+              console.error("Error populating safety section:", error);
+              document.getElementById("safetySection").innerHTML =
+                '<div class="alert alert-danger">Error loading safety data</div>';
+            }
+
+            try {
+              populateOperationalSection(data);
+              sectionsPopulated++;
+            } catch (error) {
+              console.error("Error populating operational section:", error);
+              document.getElementById("operationalSection").innerHTML =
+                '<div class="alert alert-danger">Error loading operational data</div>';
+            }
+
+            // Show the report container if at least one section was populated
+            if (sectionsPopulated > 0) {
+              document.getElementById("reportContainer").style.display =
+                "block";
+
+              // Scroll to report
+              document.getElementById("reportContainer").scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            } else {
+              alert(
+                "Unable to display any report sections. Please check the console for details."
+              );
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error fetching report: " + error.message);
+          })
+          .finally(() => {
+            // Reset button state
+            filterBtn.innerHTML = originalText;
+            filterBtn.disabled = false;
+          });
+      }
+
+      function populateFlightSection(data) {
+        const section = document.getElementById("flightSection");
+        let html = "";
+
+        // Flight Information
+        html += `
+                <div class="data-section">
+                    <div class="section-title">Flight Details</div>
+                    <div class="data-item">
+                        <span class="data-label">From:</span>
+                        <span class="data-value">${data.origin || "N/A"}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">To:</span>
+                        <span class="data-value">${
+                          data.destination || "N/A"
+                        }</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Aircraft:</span>
+                        <span class="data-value">${
+                          data.fuel_efficiency?.aircraft_type ||
+                          document.getElementById("aircraftCode").value
+                        }</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Distance:</span>
+                        <span class="data-value">${
+                          data.distance_info
+                            ? data.distance_info.distance_miles +
+                              " miles (" +
+                              data.distance_info.distance_km +
+                              " km)"
+                            : "N/A"
+                        }</span>
+                    </div>
+                </div>
+            `;
+
+        // Weather Information
+        if (data.weather && typeof data.weather === "object") {
+          html += `
+                    <div class="data-section">
+                        <div class="section-title">Weather Conditions</div>
+                `;
+
+          // Check if weather data has error
+          if (data.weather.error) {
+            html += `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Weather data unavailable: ${data.weather.error}
+                        </div>
+                    `;
+          } else {
+            // Origin Weather
+            if (
+              data.weather.origin &&
+              data.weather.origin.forecast &&
+              Array.isArray(data.weather.origin.forecast)
+            ) {
+              html += `<h6><i class="fas fa-plane-departure"></i> ${data.weather.origin.city} (Origin)</h6>`;
+              data.weather.origin.forecast.forEach((forecast) => {
+                if (forecast && !forecast.error) {
+                  html += `
+                                    <div class="weather-item">
+                                        <div class="weather-time">${
+                                          forecast.time || "N/A"
+                                        }</div>
+                                        <div class="weather-desc">
+                                            <span class="badge badge-info">${
+                                              forecast.weather_condition ||
+                                              "N/A"
+                                            }</span>
+                                        </div>
+                                        <div class="weather-details">
+                                            <div class="weather-detail">
+                                                <strong>Temp:</strong><br>${
+                                                  forecast.temperature || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Humidity:</strong><br>${
+                                                  forecast.humidity || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Wind:</strong><br>${
+                                                  forecast.wind_speed || "N/A"
+                                                }<br><small>${
+                    forecast.wind_direction || "N/A"
+                  }</small>
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Pressure:</strong><br>${
+                                                  forecast.pressure || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Visibility:</strong><br>${
+                                                  forecast.visibility || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Precipitation:</strong><br>${
+                                                  forecast.precipitation ||
+                                                  "N/A"
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                } else if (forecast && forecast.error) {
+                  html += `
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> ${forecast.error}
+                                    </div>
+                                `;
+                }
+              });
+            } else if (data.weather.origin && data.weather.origin.error) {
+              html += `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Origin weather: ${data.weather.origin.error}
+                            </div>
+                        `;
+            }
+          }
+
+          // Destination Weather (only if not in error state)
+          if (!data.weather.error) {
+            if (
+              data.weather.destination &&
+              data.weather.destination.forecast &&
+              Array.isArray(data.weather.destination.forecast)
+            ) {
+              html += `<h6 class="mt-3"><i class="fas fa-plane-arrival"></i> ${data.weather.destination.city} (Destination)</h6>`;
+              data.weather.destination.forecast.forEach((forecast) => {
+                if (forecast && !forecast.error) {
+                  html += `
+                                    <div class="weather-item">
+                                        <div class="weather-time">${
+                                          forecast.time || "N/A"
+                                        }</div>
+                                        <div class="weather-desc">
+                                            <span class="badge badge-info">${
+                                              forecast.weather_condition ||
+                                              "N/A"
+                                            }</span>
+                                        </div>
+                                        <div class="weather-details">
+                                            <div class="weather-detail">
+                                                <strong>Temp:</strong><br>${
+                                                  forecast.temperature || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Humidity:</strong><br>${
+                                                  forecast.humidity || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Wind:</strong><br>${
+                                                  forecast.wind_speed || "N/A"
+                                                }<br><small>${
+                    forecast.wind_direction || "N/A"
+                  }</small>
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Pressure:</strong><br>${
+                                                  forecast.pressure || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Visibility:</strong><br>${
+                                                  forecast.visibility || "N/A"
+                                                }
+                                            </div>
+                                            <div class="weather-detail">
+                                                <strong>Precipitation:</strong><br>${
+                                                  forecast.precipitation ||
+                                                  "N/A"
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                } else if (forecast && forecast.error) {
+                  html += `
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> ${forecast.error}
+                                    </div>
+                                `;
+                }
+              });
+            } else if (
+              data.weather.destination &&
+              data.weather.destination.error
+            ) {
+              html += `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Destination weather: ${data.weather.destination.error}
+                            </div>
+                        `;
+            }
+          }
+
+          html += "</div>";
+        } else {
+          html += `
+                    <div class="data-section">
+                        <div class="section-title">Weather Conditions</div>
+                        <div class="alert alert-danger">
+                            ${data.weather?.error || "Weather data unavailable"}
+                        </div>
+                    </div>
+                `;
+        }
+
+        section.innerHTML = html;
+      }
+
+      function populateFuelSection(data) {
+        const section = document.getElementById("fuelSection");
+        let html = "";
+
+        if (
+          data.fuel_efficiency &&
+          !data.fuel_efficiency.error &&
+          Object.keys(data.fuel_efficiency).length > 0
+        ) {
+          html = `
+                    <div class="data-section">
+                        <div class="data-item">
+                            <span class="data-label">Aircraft Type:</span>
+                            <span class="data-value"><strong>${
+                              data.fuel_efficiency.aircraft_type || "N/A"
+                            }</strong></span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Fuel Consumption:</span>
+                            <span class="data-value">${
+                              data.fuel_efficiency.fuel_consumption || "N/A"
+                            }</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">CO₂ Emissions:</span>
+                            <span class="data-value">${
+                              data.fuel_efficiency.emissions || "N/A"
+                            }</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Flight Distance:</span>
+                            <span class="data-value">${
+                              data.fuel_efficiency.distance || "N/A"
+                            }</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Fuel Efficiency:</span>
+                            <span class="data-value">${
+                              data.fuel_efficiency.fuel_efficiency || "N/A"
+                            }</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">ICAO Code:</span>
+                            <span class="data-value">${
+                              data.fuel_efficiency.icao_code || "N/A"
+                            }</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Data Source:</span>
+                            <span class="data-value">
+                                <span class="badge badge-info">${
+                                  data.fuel_efficiency.source || "N/A"
+                                }</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+        } else {
+          html = `
+                    <div class="alert alert-danger">
+                        ${
+                          data.fuel_efficiency?.error ||
+                          "Fuel efficiency data unavailable"
+                        }
+                    </div>
+                `;
+        }
+
+        section.innerHTML = html;
+      }
+
+      function populateSafetySection(data) {
+        const section = document.getElementById("safetySection");
+        let html = "";
+
+        if (
+          data.safety_factors &&
+          data.safety_factors.factors &&
+          Array.isArray(data.safety_factors.factors)
+        ) {
+          html = `<div class="data-section">
+                    <div class="section-title">Aircraft Safety Metrics</div>
+                `;
+
+          // Display each safety factor
+          data.safety_factors.factors.forEach((factor) => {
+            const riskBadgeClass =
+              factor.risk_level === "Low"
+                ? "badge-success"
+                : factor.risk_level === "Medium"
+                ? "badge-warning"
+                : "badge-danger";
+
+            html += `
+                        <div class="safety-factor-item" style="border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px;">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>${factor.factor}</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    <span class="badge ${riskBadgeClass}">${
+              factor.risk_level
+            }</span>
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>${factor.value}</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    Score: ${factor.score}
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">${
+                                      factor.source || "N/A"
+                                    }</small>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <small><i class="fas fa-lightbulb"></i> ${
+                                      factor.recommendation
+                                    }</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+          });
+
+          html += `</div>`;
+        } else if (data.safety_factors && data.safety_factors.error) {
+          html = `<div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Safety data unavailable: ${data.safety_factors.error}
+                </div>`;
+        } else {
+          html =
+            '<div class="alert alert-danger">Safety factors data unavailable</div>';
+        }
+
+        section.innerHTML = html;
+      }
+
+      function populateOperationalSection(data) {
+        const section = document.getElementById("operationalSection");
+        let html = "";
+
+        // Check if operational constraints has aircraft data
+        if (
+          data.operational_constraints &&
+          data.operational_constraints.aircraft_info &&
+          data.operational_constraints.constraints &&
+          Array.isArray(data.operational_constraints.constraints)
+        ) {
+          const aircraft = data.operational_constraints.aircraft_info;
+
+          // Aircraft Information Header
+          html = `
+                    <div class="data-section">
+                        <div class="section-title">Aircraft Profile</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="data-item">
+                                    <span class="data-label">Registration:</span>
+                                    <span class="data-value"><strong>${aircraft.registration}</strong></span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Aircraft Type:</span>
+                                    <span class="data-value">${aircraft.type}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="data-item">
+                                    <span class="data-label">Operator:</span>
+                                    <span class="data-value">${aircraft.operator}</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Country:</span>
+                                    <span class="data-value">${aircraft.country}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+          // Display each constraint category
+          data.operational_constraints.constraints.forEach((category) => {
+            html += `
+                        <div class="data-section">
+                            <div class="section-title">${category.category}</div>
+                            <div class="row">
+                    `;
+
+            category.items.forEach((item, index) => {
+              // Create responsive columns (2 items per row on medium screens)
+              const colClass =
+                category.items.length > 2 ? "col-md-6" : "col-md-12";
+
+              html += `
+                            <div class="${colClass} mb-3">
+                                <div class="constraint-item" style="border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; height: 100%;">
+                                    <div class="constraint-header">
+                                        <strong>${item.type}</strong>
+                                    </div>
+                                    <div class="constraint-value" style="font-size: 1.2em; color: #007bff; margin: 8px 0;">
+                                        ${item.formatted_value}
+                                    </div>
+                                    <div class="constraint-notes" style="font-size: 0.9em; color: #666;">
+                                        <i class="fas fa-info-circle"></i> ${item.notes}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+            });
+
+            html += `
+                            </div>
+                        </div>
+                    `;
+          });
+        } else if (
+          data.operational_constraints &&
+          data.operational_constraints.error
+        ) {
+          html = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> ${data.operational_constraints.error}
+                    </div>
+                `;
+        } else {
+          html = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Aircraft operational constraints data is being loaded...
+                    </div>
+                `;
+        }
+
+        section.innerHTML = html;
+      }
+
+      function copyCardData(cardType) {
+        let dataToCopy = {};
+
+        switch (cardType) {
+          case "flight":
+            dataToCopy = {
+              flight_details: {
+                origin_airport: reportData.origin_airport,
+                destination_airport: reportData.destination_airport,
+                aircraft_type: reportData.fuel_efficiency?.aircraft_type,
+                distance:
+                  document.getElementById("distanceMiles").value + " miles",
+              },
+              weather: reportData.weather,
+            };
+            break;
+          case "fuel":
+            dataToCopy = reportData.fuel_efficiency || {};
+            break;
+          case "safety":
+            dataToCopy = reportData.safety_factors || {};
+            break;
+          case "operational":
+            dataToCopy = reportData.operational_constraints || {};
+            break;
+        }
+
+        if (Object.keys(dataToCopy).length === 0) {
+          alert(`No ${cardType} data to copy. Please generate a report first.`);
+          return;
+        }
+
+        const textToCopy = JSON.stringify(dataToCopy, null, 2);
+
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            // Show success feedback
+            const button = event.target.closest(".copy-btn");
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.style.color = "var(--success-color)";
+
+            setTimeout(() => {
+              button.innerHTML = originalIcon;
+              button.style.color = "";
+            }, 2000);
+          })
+          .catch((err) => {
+            alert("Failed to copy data to clipboard: " + err.message);
+          });
+      }
+
+      function copyAllData() {
+        if (Object.keys(reportData).length === 0) {
+          alert("No data to copy. Please generate a report first.");
+          return;
+        }
+
+        const allData = {
+          flight_details: {
+            origin_airport: reportData.origin_airport,
+            destination_airport: reportData.destination_airport,
+            aircraft_type: reportData.fuel_efficiency?.aircraft_type,
+            distance: document.getElementById("distanceMiles").value + " miles",
+          },
+          weather: reportData.weather,
+          fuel_efficiency: reportData.fuel_efficiency,
+          safety_factors: reportData.safety_factors,
+          operational_constraints: reportData.operational_constraints,
+        };
+
+        const textToCopy = JSON.stringify(allData, null, 2);
+
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            // Show success feedback
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> All Data Copied!';
+            button.classList.add("btn-success");
+            button.classList.remove("btn-primary");
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove("btn-success");
+              button.classList.add("btn-primary");
+            }, 2000);
+          })
+          .catch((err) => {
+            alert("Failed to copy data to clipboard: " + err.message);
+          });
+      }
+
+      function sendAllCardsToAI() {
+        if (Object.keys(reportData).length === 0) {
+          alert("No data to send to AI. Please generate a report first.");
+          return;
+        }
+
+        // Store data in localStorage for AI chat
+        localStorage.setItem(
+          "ai_card_data",
+          JSON.stringify({
+            card: "all",
+            data: reportData,
+          })
+        );
+
+        // Redirect to chatbot page (adjust URL as needed)
+        window.location.href = "/chat-bot/";
+      }
+
+      // Auto-calculate distance when both airports are selected
+      function setupDistanceCalculation() {
+        if (originDropdown && destinationDropdown) {
+          document
+            .getElementById("origin")
+            .addEventListener("change", calculateDistance);
+          document
+            .getElementById("destination")
+            .addEventListener("change", calculateDistance);
+        }
+      }
+
+      function calculateDistance() {
+        const origin = originDropdown ? originDropdown.getValue() : "";
+        const destination = destinationDropdown
+          ? destinationDropdown.getValue()
+          : "";
+
+        if (origin && destination && origin !== destination) {
+          // This is a simplified distance calculation
+          // In a real application, you would use actual airport coordinates
+          const estimatedDistance = Math.floor(Math.random() * 2000) + 200; // Random distance between 200-2200 miles
+          document.getElementById("distanceMiles").value = estimatedDistance;
+        }
+      }
+
+      // Form validation and user experience improvements
+      document.addEventListener("DOMContentLoaded", function () {
+        // Initialize dropdowns first
+        originDropdown = new SearchableDropdown(
+          "originDropdown",
+          "origin",
+          "originMenu"
+        );
+        destinationDropdown = new SearchableDropdown(
+          "destinationDropdown",
+          "destination",
+          "destinationMenu"
+        );
+
+        // Setup distance calculation after dropdowns are initialized
+        setTimeout(setupDistanceCalculation, 100);
+
+        // Add input validation
+        const inputs = document.querySelectorAll("input:not(.dropdown-input)");
+        inputs.forEach((input) => {
+          input.addEventListener("blur", function () {
+            if (this.value.trim() === "") {
+              this.style.borderColor = "var(--danger-color)";
+            } else {
+              this.style.borderColor = "var(--primary-color)";
+            }
+          });
+        });
+
+        // Add keyboard shortcut for generating report (Ctrl+Enter)
+        document.addEventListener("keydown", function (e) {
+          if (e.ctrlKey && e.key === "Enter") {
+            filterReportData();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

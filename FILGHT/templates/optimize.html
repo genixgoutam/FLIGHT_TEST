@@ -1,411 +1,507 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Flight Path Optimization</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/navbar.css"> 
-    <link rel="stylesheet" href="/static/css/optimize.css">
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/navbar.css" />
+    <link rel="stylesheet" href="/static/css/optimize.css" />
+  </head>
+  <body>
     <nav class="menu">
-        <ul>
-            <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
-            <li><a href="/optimize/" class="{% if 'optimize' in request.path %}active{% endif %}">Optimize</a></li>
-            <li><a href="/report/" class="{% if 'report' in request.path %}active{% endif %}">Report</a></li>
-            <li><a href="/flight-info/" class="{% if 'flight-info' in request.path %}active{% endif %}">Flight Info</a>
-            </li>
-            <li><a href="/map/" class="{% if 'map' in request.path %}active{% endif %}">Map</a></li>
-            {% comment %} <li><a href="/admin/" class="{% if 'admin' in request.path %}active{% endif %}">Admin</a></li> {% endcomment %}
-            {% comment %} <li><a href="/flight/" class="{% if 'flight' in request.path %}active{% endif %}">Flight</a></li> {% endcomment %}
-        </ul>
+      <ul>
+        <li>
+          <a href="/" class="{% if request.path == '/' %}active{% endif %}"
+            >Home</a
+          >
+        </li>
+        <li>
+          <a
+            href="/optimize/"
+            class="{% if 'optimize' in request.path %}active{% endif %}"
+            >Optimize</a
+          >
+        </li>
+        <li>
+          <a
+            href="/report/"
+            class="{% if 'report' in request.path %}active{% endif %}"
+            >Report</a
+          >
+        </li>
+        <!-- <li><a href="/flight-info/" class="{% if 'flight-info' in request.path %}active{% endif %}">Flight Info</a>
+            </li> -->
+        <li>
+          <a
+            href="/map/"
+            class="{% if 'map' in request.path %}active{% endif %}"
+            >Map</a
+          >
+        </li>
+      </ul>
     </nav>
-    
+
     <div class="container mt-4">
-        <h2>Flight Path Optimization</h2>
-        
-        <form id="routeForm" method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="origin" class="form-label">Origin Airport</label>
-                <select class="form-select" id="origin" name="origin" required>
-                    <option value="">Select origin airport...</option>
-                    {% for airport in airports %}
-                    <option value="{{ airport.id }}">
-                        {{ airport.country }}, {{ airport.city }} ({{ airport.code }}) - {{ airport.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="destination" class="form-label">Destination Airport</label>
-                <select class="form-select" id="destination" name="destination" required>
-                    <option value="">Select destination airport...</option>
-                    {% for airport in airports %}
-                    <option value="{{ airport.id }}">
-                        {{ airport.country }}, {{ airport.city }} ({{ airport.code }}) - {{ airport.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Show Route</button>
-            <button type="button" class="btn btn-secondary" onclick="window.location.href='/optimize/'">Reset</button>
-        </form>
-        <div id="result" class="mt-4" style="display:none;">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-route"></i> Optimized Route</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5><i class="fas fa-map-marker-alt"></i> Route Path</h5>
-                            <div id="route-info" class="alert alert-info"></div>
-                            
-                            <h5><i class="fas fa-clock"></i> Timing Information</h5>
-                            <div id="timing-info" class="timing-info"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <h5><i class="fas fa-dollar-sign"></i> Cost Breakdown</h5>
-                            <div id="cost-info" class="cost-breakdown"></div>
-                            
-                            <h5><i class="fas fa-chart-line"></i> Optimization Details</h5>
-                            <div id="optimization-info" class="alert alert-secondary"></div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <button id="sendToReport" class="btn btn-success">
-                            <i class="fas fa-file-alt"></i> Send to Report
-                        </button>
-                    </div>
-                </div>
-            </div>
+      <h2>Flight Path Optimization</h2>
+
+      <form id="routeForm" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="origin" class="form-label">Origin Airport</label>
+          <select class="form-select" id="origin" name="origin" required>
+            <option value="">Select origin airport...</option>
+            {% for airport in airports %}
+            <option value="{{ airport.id }}">
+              {{ airport.country }}, {{ airport.city }} ({{ airport.code }}) -
+              {{ airport.name }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
-        <div id="map-container" class="mt-4" style="display:none;">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0"><i class="fas fa-map"></i> Route Map</h4>
-                </div>
-                <div class="card-body">
-                    <div id="map" style="height: 400px; width: 100%; border-radius: 8px; position: relative;">
-                        <div class="route-legend">
-                            <h6><i class="fas fa-info-circle"></i> Legend</h6>
-                            <div><span class="badge bg-primary">●</span> Optimal Route</div>
-                            <div><span class="badge bg-danger">●</span> Alternative Routes</div>
-                            <div><span class="badge bg-success">📍</span> Airports</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="mb-3">
+          <label for="destination" class="form-label"
+            >Destination Airport</label
+          >
+          <select
+            class="form-select"
+            id="destination"
+            name="destination"
+            required
+          >
+            <option value="">Select destination airport...</option>
+            {% for airport in airports %}
+            <option value="{{ airport.id }}">
+              {{ airport.country }}, {{ airport.city }} ({{ airport.code }}) -
+              {{ airport.name }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
+        <button type="submit" class="btn btn-primary">Show Route</button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="window.location.href='/optimize/'"
+        >
+          Reset
+        </button>
+      </form>
+      <div id="result" class="mt-4" style="display: none">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-route"></i> Optimized Route</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h5><i class="fas fa-map-marker-alt"></i> Route Path</h5>
+                <div id="route-info" class="alert alert-info"></div>
+
+                <h5><i class="fas fa-clock"></i> Timing Information</h5>
+                <div id="timing-info" class="timing-info"></div>
+              </div>
+              <div class="col-md-6">
+                <h5><i class="fas fa-dollar-sign"></i> Cost Breakdown</h5>
+                <div id="cost-info" class="cost-breakdown"></div>
+
+                <h5><i class="fas fa-chart-line"></i> Optimization Details</h5>
+                <div id="optimization-info" class="alert alert-secondary"></div>
+              </div>
+            </div>
+            <div class="text-center mt-3">
+              <button id="sendToReport" class="btn btn-success">
+                <i class="fas fa-file-alt"></i> Send to Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="map-container" class="mt-4" style="display: none">
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="fas fa-map"></i> Route Map</h4>
+          </div>
+          <div class="card-body">
+            <div
+              id="map"
+              style="
+                height: 400px;
+                width: 100%;
+                border-radius: 8px;
+                position: relative;
+              "
+            >
+              <div class="route-legend">
+                <h6><i class="fas fa-info-circle"></i> Legend</h6>
+                <div><span class="badge bg-primary">●</span> Optimal Route</div>
+                <div>
+                  <span class="badge bg-danger">●</span> Alternative Routes
+                </div>
+                <div><span class="badge bg-success">📍</span> Airports</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    
+
     <!-- Route Details Modal -->
     <div class="modal fade" id="routeDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Route Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="routeDetailContent">
-                    <!-- Content will be populated by JavaScript -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="bookRoute()">Book This Route</button>
-                </div>
-            </div>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Route Details</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="routeDetailContent">
+            <!-- Content will be populated by JavaScript -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" onclick="bookRoute()">
+              Book This Route
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <!-- Pass airports data to JS using a safe JSON script block -->
     {# {{ airports|json_script:"airports-data" }} #}
-    
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.geodesic"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-    let map, polylines = [], markers = [];
-    let flightData = [];
-    
-    function showMap(routes) {
-        console.log('showMap called with routes:', routes); // Debug log
-        document.getElementById('map-container').style.display = 'block';
-        
+      let map,
+        polylines = [],
+        markers = [];
+      let flightData = [];
+
+      function showMap(routes) {
+        const mapContainer = document.getElementById("map-container");
+        if (!Array.isArray(routes)) return;
+
+        mapContainer.style.display = "block";
+
         if (!map) {
-            console.log('Creating new map'); // Debug log
-            map = L.map('map').setView([39.8283, -98.5795], 4);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            console.log('Map created successfully'); // Debug log
+          map = L.map("map").setView([20.5937, 78.9629], 4);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
+          }).addTo(map);
         } else {
-            console.log('Clearing existing map layers'); // Debug log
-            polylines.forEach(p => map.removeLayer(p));
-            markers.forEach(m => map.removeLayer(m));
-            polylines = [];
-            markers = [];
+          polylines.forEach((p) => map.removeLayer(p));
+          markers.forEach((m) => map.removeLayer(m));
+          polylines = [];
+          markers = [];
         }
-        
-        routes.forEach((route, idx) => {
-            // Debug: Log coordinates and geodesic function
-            console.log('Route coordinates:', route.coordinates);
-            console.log('L.geodesic:', L.geodesic);
-            if (!route.coordinates || !Array.isArray(route.coordinates) || route.coordinates.length < 2) {
-                console.warn(`Route ${idx} has invalid coordinates:`, route.coordinates);
-                return;
+
+        const routeStyles = [{ color: "blue", weight: 5 }];
+
+        for (let i = 0; i < Math.min(routes.length, routeStyles.length); i++) {
+          const route = routes[i];
+          if (!route.coordinates || route.coordinates.length < 2) continue;
+
+          const { color, weight } = routeStyles[i];
+
+          try {
+            const line = L.geodesic
+              ? L.geodesic([route.coordinates], {
+                  weight,
+                  color,
+                  opacity: 0.8,
+                  steps: 50,
+                })
+              : L.polyline(route.coordinates, {
+                  weight,
+                  color,
+                  opacity: 0.8,
+                });
+            line.addTo(map);
+            polylines.push(line);
+          } catch (error) {
+            const fallback = L.polyline(route.coordinates, {
+              weight,
+              color,
+              opacity: 0.8,
+            }).addTo(map);
+            polylines.push(fallback);
+          }
+
+          route.coordinates.forEach((coord, idx) => {
+            if (Array.isArray(coord) && coord.length === 2) {
+              const label = route.path?.split(" → ")[idx] || "Stop";
+              const marker = L.marker(coord).addTo(map).bindPopup(label);
+              markers.push(marker);
             }
-            const color = idx === 0 ? 'blue' : 'red';
-            const weight = idx === 0 ? 5 : 3;
-            
-            // Try geodesic first, fallback to regular polyline
-            try {
-                if (L.geodesic) {
-                    // Use geodesic line for a curved, globe-like route
-                    const geodesic = L.geodesic([route.coordinates], {
-                        weight: weight,
-                        color: color,
-                        opacity: 0.8,
-                        steps: 50 // More steps = smoother curve
-                    }).addTo(map);
-                    polylines.push(geodesic);
-                } else {
-                    // Fallback to regular polyline
-                    const polyline = L.polyline(route.coordinates, {
-                        weight: weight,
-                        color: color,
-                        opacity: 0.8
-                    }).addTo(map);
-                    polylines.push(polyline);
+          });
+        }
+
+        if (polylines.length > 0) {
+          const group = new L.featureGroup(polylines);
+          map.fitBounds(group.getBounds(), { padding: [20, 20] });
+        }
+      }
+
+      // Route Form Handler
+
+      document
+        .getElementById("routeForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const origin = document.getElementById("origin").value;
+          const destination = document.getElementById("destination").value;
+          const csrfToken = document.querySelector(
+            "[name=csrfmiddlewaretoken]"
+          ).value;
+
+          fetch("/optimize/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ origin, destination }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.all_routes && data.all_routes.length > 0) {
+                function getFirstRouteByMethod(routes, methodName) {
+                  return routes.find(
+                    (r) => r.method?.toLowerCase() === methodName
+                  );
                 }
-            } catch (error) {
-                console.warn('Error creating geodesic line, using regular polyline:', error);
-                const polyline = L.polyline(route.coordinates, {
-                    weight: weight,
-                    color: color,
-                    opacity: 0.8
-                }).addTo(map);
-                polylines.push(polyline);
-            }
-            
-            // Add markers for each stop
-            route.coordinates.forEach((coord, i) => {
-                if (coord && Array.isArray(coord) && coord.length === 2) {
-                    const marker = L.marker(coord).addTo(map).bindPopup(`${route.path ? route.path.split(' → ')[i] || 'Stop' : 'Stop'}`);
-                    markers.push(marker);
+                function getFirstAlternative(routes) {
+                  return routes.find((r) =>
+                    r.method?.toLowerCase().includes("alternative")
+                  );
                 }
+
+                const qaoaRoute = getFirstRouteByMethod(
+                  data.all_routes,
+                  "qaoa"
+                );
+                const dijkstraRoute = getFirstRouteByMethod(
+                  data.all_routes,
+                  "dijkstra"
+                );
+                const altRoute = getFirstAlternative(data.all_routes);
+
+                let filteredRoutes = [];
+                if (qaoaRoute) filteredRoutes.push(qaoaRoute);
+                if (dijkstraRoute) filteredRoutes.push(dijkstraRoute);
+                if (altRoute) filteredRoutes.push(altRoute);
+
+                if (filteredRoutes.length === 0) {
+                  filteredRoutes = data.all_routes.slice(0, 3);
+                  document.getElementById(
+                    "route-info"
+                  ).innerHTML = `<div class='alert alert-warning'>No QAOA, Dijkstra, or Alternative routes found. Showing up to 3 available routes.</div>`;
+                }
+
+                document.getElementById("map-container").style.display =
+                  "block";
+                document.getElementById("result").style.display = "block";
+
+                window.currentRoutes = filteredRoutes;
+                window.currentTiming = data.route?.timing || {};
+                window.currentCost = {
+                  total_cost: data.route?.total_cost,
+                  total_fuel_cost: data.route?.total_fuel_cost,
+                };
+                window.currentOptimization = data.optimization_results || {};
+
+                showMap(filteredRoutes);
+
+                let routeInfoHtml = '<div class="alert alert-info route-info">';
+                routeInfoHtml +=
+                  '<h5><i class="fas fa-plane"></i> Route Details</h5>';
+
+                filteredRoutes.forEach((route, index) => {
+                  const isMain = index === 0;
+                  const routeClass = isMain ? "text-primary" : "text-danger";
+                  const routeIcon = isMain ? "fas fa-star" : "fas fa-route";
+
+                  routeInfoHtml += `<div class="mb-3 ${routeClass}">`;
+                  routeInfoHtml += `<strong><i class="${routeIcon}"></i> ${
+                    isMain ? "Main Route" : "Alternative " + index
+                  }:</strong> ${route.path}<br>`;
+                  routeInfoHtml += `<small>`;
+                  routeInfoHtml += `Distance: ${route.distance_km || 0} km (${
+                    route.distance_miles || 0
+                  } miles) | `;
+                  routeInfoHtml += `Time: ${route.duration_hours || 0}h ${
+                    route.duration_minutes || 0
+                  }m | `;
+                  routeInfoHtml += `Cost: Rs${route.total_cost || 0} | `;
+                  routeInfoHtml += `Fuel: Rs${route.fuel_cost || 0}`;
+                  routeInfoHtml += `</small></div>`;
+                });
+
+                routeInfoHtml += "</div>";
+                document.getElementById("route-info").innerHTML = routeInfoHtml;
+
+                document.getElementById("cost-info").innerHTML = data.route
+                  ? `
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Total Cost:</strong><br>
+                        <span class="badge bg-success">Rs${
+                          data.route.total_cost || 0
+                        }</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Fuel Cost:</strong><br>
+                        <span class="badge bg-warning">Rs${
+                          data.route.total_fuel_cost || 0
+                        }</span>
+                    </div>
+                </div>`
+                  : '<span class="text-muted">No cost data available</span>';
+
+                document.getElementById("optimization-info").innerHTML =
+                  data.optimization_results
+                    ? `
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Method:</strong><br>
+                        <span class="badge bg-dark">${
+                          data.optimization_results.method || "Unknown"
+                        }</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Total Distance:</strong><br>
+                        <span class="badge bg-info">${
+                          data.optimization_results.total_distance || 0
+                        } miles</span>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <strong>Total Cost:</strong><br>
+                        <span class="badge bg-success">Rs${
+                          data.optimization_results.total_cost || 0
+                        }</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Path:</strong><br>
+                        <small>${
+                          data.optimization_results.path || "N/A"
+                        }</small>
+                    </div>
+                </div>`
+                    : '<span class="text-muted">No optimization data available</span>';
+              } else {
+                document.getElementById(
+                  "route-info"
+                ).innerHTML = `<div class='alert alert-warning'>No route found. Please select valid airports.</div>`;
+                document.getElementById("map-container").style.display = "none";
+                document.getElementById("result").style.display = "block";
+                document.getElementById("timing-info").innerHTML =
+                  '<span class="text-muted">No timing data available</span>';
+                document.getElementById("cost-info").innerHTML =
+                  '<span class="text-muted">No cost data available</span>';
+                document.getElementById("optimization-info").innerHTML =
+                  '<span class="text-muted">No optimization data available</span>';
+              }
+            })
+            .catch((err) => {
+              document.getElementById(
+                "route-info"
+              ).innerHTML = `<div class='alert alert-danger'>Error fetching route: ${err}</div>`;
+              document.getElementById("map-container").style.display = "none";
+              document.getElementById("result").style.display = "block";
+              document.getElementById("timing-info").innerHTML =
+                '<span class="text-muted">No timing data available</span>';
+              document.getElementById("cost-info").innerHTML =
+                '<span class="text-muted">No cost data available</span>';
+              document.getElementById("optimization-info").innerHTML =
+                '<span class="text-muted">No optimization data available</span>';
             });
         });
-        
-        if (routes.length > 0 && polylines.length > 0) {
-            console.log('Fitting map bounds to routes'); // Debug log
-            const group = new L.featureGroup(polylines);
-            map.fitBounds(group.getBounds());
-        } else {
-            console.warn('No valid routes to display on map'); // Debug log
-        }
-    }
 
-    // Only the route fetching logic is replaced below:
-    document.getElementById('routeForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const origin = document.getElementById('origin').value;
-      const destination = document.getElementById('destination').value;
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      // Reset Form
 
-      fetch('/optimize/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ origin, destination })
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Received data from server:', data); // Debug log
-        if (data.all_routes && data.all_routes.length > 0) {
-          console.log('Calling showMap with routes:', data.all_routes); // Debug log
-          console.log('Route calculations:', data.all_routes.map(r => ({
-            path: r.path,
-            distance: r.distance_km,
-            time: `${r.duration_hours}h ${r.duration_minutes}m`,
-            cost: r.total_cost,
-            fuel: r.fuel_cost
-          }))); // Debug log
-          document.getElementById('map-container').style.display = 'block';
-          document.getElementById('result').style.display = 'block';
-          
-          // Store data for report functionality
-          window.currentRoutes = data.all_routes;
-          window.currentTiming = data.route?.timing || {};
-          window.currentCost = {
-            total_cost: data.route?.total_cost,
-            total_fuel_cost: data.route?.total_fuel_cost
-          };
-          window.currentOptimization = data.optimization_results || {};
-          
-          // Small delay to ensure map container is visible before initializing map
-          showMap(data.all_routes);
-  
-          // Display detailed route information
-          let routeInfoHtml = '<div class="alert alert-info route-info">';
-          routeInfoHtml += '<h5><i class="fas fa-plane"></i> Route Details</h5>';
-          
-          data.all_routes.forEach((route, index) => {
-            const isMain = index === 0;
-            const routeClass = isMain ? 'text-primary' : 'text-danger';
-            const routeIcon = isMain ? 'fas fa-star' : 'fas fa-route';
-            
-            routeInfoHtml += `<div class="mb-3 ${routeClass}">`;
-            routeInfoHtml += `<strong><i class="${routeIcon}"></i> ${isMain ? 'Main Route' : 'Alternative ' + index}:</strong> ${route.path}<br>`;
-            routeInfoHtml += `<small>`;
-            routeInfoHtml += `Distance: ${route.distance_km || 0} km (${route.distance_miles || 0} miles) | `;
-            routeInfoHtml += `Time: ${route.duration_hours || 0}h ${route.duration_minutes || 0}m | `;
-            routeInfoHtml += `Cost: Rs${route.total_cost || 0} | `;
-            routeInfoHtml += `Fuel: Rs${route.fuel_cost || 0}`;
-            routeInfoHtml += `</small></div>`;
-          });
-          
-          routeInfoHtml += '</div>';
-          document.getElementById('route-info').innerHTML = routeInfoHtml;
-
-          // Timing info
-          if (data.route && data.route.timing) {
-            const timing = data.route.timing;
-            document.getElementById('timing-info').innerHTML = `
-              <div class="row">
-                <div class="col-6">
-                  <strong>Duration:</strong><br>
-                  <span class="badge bg-primary">${timing.estimated_duration_hours || 0} hours</span><br>
-                  <span class="badge bg-secondary">${timing.estimated_duration_minutes || 0} minutes</span>
-                </div>
-                <div class="col-6">
-                  <strong>Distance:</strong><br>
-                  <span class="badge bg-info">${timing.total_distance_miles || 0} miles</span><br>
-                  <span class="badge bg-warning">${timing.total_distance_km || 0} km</span>
-                </div>
-              </div>
-            `;
-          } else {
-            document.getElementById('timing-info').innerHTML = '<span class="text-muted">No timing data available</span>';
+      document
+        .querySelector("button.btn.btn-secondary")
+        .addEventListener("click", function () {
+          document.getElementById("result").style.display = "none";
+          document.getElementById("map-container").style.display = "none";
+          document.getElementById("route-info").innerHTML = "";
+          document.getElementById("timing-info").innerHTML = "";
+          document.getElementById("cost-info").innerHTML = "";
+          document.getElementById("optimization-info").innerHTML = "";
+          document.getElementById("origin").value = "";
+          document.getElementById("destination").value = "";
+          if (window.$ && window.$.fn.select2) {
+            $("#origin").val("").trigger("change");
+            $("#destination").val("").trigger("change");
           }
+        });
 
-          // Cost info
-          if (data.route && data.route.total_cost !== undefined) {
-            document.getElementById('cost-info').innerHTML = `
-              <div class="row">
-                <div class="col-6">
-                  <strong>Total Cost:</strong><br>
-                  <span class="badge bg-success">Rs${data.route.total_cost || 0}</span>
-                </div>
-                <div class="col-6">
-                  <strong>Fuel Cost:</strong><br>
-                  <span class="badge bg-warning">Rs${data.route.total_fuel_cost || 0}</span>
-                </div>
-              </div>
-            `;
-          } else {
-            document.getElementById('cost-info').innerHTML = '<span class="text-muted">No cost data available</span>';
-          }
-
-          // Optimization info
-          if (data.optimization_results) {
-            const opt = data.optimization_results;
-            document.getElementById('optimization-info').innerHTML = `
-              <div class="row">
-                <div class="col-6">
-                  <strong>Method:</strong><br>
-                  <span class="badge bg-dark">${opt.method || 'Unknown'}</span>
-                </div>
-                <div class="col-6">
-                  <strong>Total Distance:</strong><br>
-                  <span class="badge bg-info">${opt.total_distance || 0} miles</span>
-                </div>
-              </div>
-              <div class="row mt-2">
-                <div class="col-6">
-                  <strong>Total Cost:</strong><br>
-                  <span class="badge bg-success">Rs${opt.total_cost || 0}</span>
-                </div>
-                <div class="col-6">
-                  <strong>Path:</strong><br>
-                  <small>${opt.path || 'N/A'}</small>
-                </div>
-              </div>
-            `;
-          } else {
-            document.getElementById('optimization-info').innerHTML = '<span class="text-muted">No optimization data available</span>';
-          }
-        } else {
-          document.getElementById('route-info').innerHTML =
-            `<div class='alert alert-warning'>No route found. Please select valid airports.</div>`;
-          document.getElementById('map-container').style.display = 'none';
-          document.getElementById('result').style.display = 'block';
-          document.getElementById('timing-info').innerHTML = '<span class="text-muted">No timing data available</span>';
-          document.getElementById('cost-info').innerHTML = '<span class="text-muted">No cost data available</span>';
-          document.getElementById('optimization-info').innerHTML = '<span class="text-muted">No optimization data available</span>';
-        }
-      })
-      .catch(err => {
-        document.getElementById('route-info').innerHTML =
-          `<div class='alert alert-danger'>Error fetching route: ${err}</div>`;
-        document.getElementById('map-container').style.display = 'none';
-        document.getElementById('result').style.display = 'block';
-        document.getElementById('timing-info').innerHTML = '<span class="text-muted">No timing data available</span>';
-        document.getElementById('cost-info').innerHTML = '<span class="text-muted">No cost data available</span>';
-        document.getElementById('optimization-info').innerHTML = '<span class="text-muted">No optimization data available</span>';
-      });
-    });
-
-    // Reset button logic
-    document.querySelector('button.btn.btn-secondary').addEventListener('click', function() {
-      document.getElementById('result').style.display = 'none';
-      document.getElementById('map-container').style.display = 'none';
-      document.getElementById('route-info').innerHTML = '';
-      document.getElementById('timing-info').innerHTML = '';
-      document.getElementById('cost-info').innerHTML = '';
-      document.getElementById('optimization-info').innerHTML = '';
-      document.getElementById('origin').value = '';
-      document.getElementById('destination').value = '';
-      if (window.$ && window.$.fn.select2) {
-        $('#origin').val('').trigger('change');
-        $('#destination').val('').trigger('change');
-      }
-    });
-    document.getElementById('sendToReport').addEventListener('click', function() {
-        // Store the current optimization data
-        const optimizationData = {
+      document
+        .getElementById("sendToReport")
+        .addEventListener("click", function () {
+          const optimizationData = {
             routes: window.currentRoutes || [],
             timing: window.currentTiming || {},
             cost: window.currentCost || {},
-            optimization: window.currentOptimization || {}
-        };
-        localStorage.setItem('optimizationReport', JSON.stringify(optimizationData));
-        window.location.href = '/report/';
-    });
-    function bookRoute() {
-        alert('Route booking functionality would be implemented here. Selected route: ' + (window.currentRoutes ? window.currentRoutes[0].path : 'No route selected'));
-    }
-    
-    $(document).ready(function() {
+            optimization: window.currentOptimization || {},
+          };
+          localStorage.setItem(
+            "optimizationReport",
+            JSON.stringify(optimizationData)
+          );
+          window.location.href = "/report/";
+        });
+
+      function bookRoute() {
+        alert(
+          "Route booking functionality would be implemented here. Selected route: " +
+            (window.currentRoutes
+              ? window.currentRoutes[0].path
+              : "No route selected")
+        );
+      }
+
+      $(document).ready(function () {
         $("#origin").select2({
-            placeholder: "Select origin airport...",
-            allowClear: true
+          placeholder: "Select origin airport...",
+          allowClear: true,
         });
         $("#destination").select2({
-            placeholder: "Select destination airport...",
-            allowClear: true
+          placeholder: "Select destination airport...",
+          allowClear: true,
         });
-    });
+      });
     </script>
-</body>
+  </body>
 </html>

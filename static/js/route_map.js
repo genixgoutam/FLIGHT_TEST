@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
         attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Example: Fetch route data from API (replace with actual API call)
+    // Fetch multiple routes from API (should return array of routes)
     fetch('/api/optimize/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -19,16 +19,27 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.path) {
-            var latlngs = data.path.map(a => [a.latitude, a.longitude]);
-            L.polyline(latlngs, {color: 'blue'}).addTo(map);
-            latlngs.forEach((latlng, idx) => {
-                L.marker(latlng).addTo(map).bindPopup(data.path[idx].name);
-            });
-            map.fitBounds(latlngs);
-            // Fill route summary
+        // Expecting data.routes to be an array of route objects
+        // Each route: { path: [{latitude, longitude, name}], method, distance }
+        let routes = Array.isArray(data.routes) ? data.routes.slice(0, 3) : [];
+        routes.forEach((route, idx) => {
+            let color = idx === 0 ? 'blue' : 'red';
+            if (route.path && route.path.length > 1) {
+                var latlngs = route.path.map(a => [a.latitude, a.longitude]);
+                L.polyline(latlngs, {color: color, weight: 5, opacity: 0.8}).addTo(map);
+                // Add markers for start/end
+                L.marker(latlngs[0]).addTo(map).bindPopup(route.path[0].name);
+                L.marker(latlngs[latlngs.length-1]).addTo(map).bindPopup(route.path[latlngs.length-1].name);
+                if (idx === 0) {
+                    map.fitBounds(latlngs);
+                }
+            }
+        });
+        // Fill route summary for first route
+        if (routes.length > 0) {
+            var route = routes[0];
             var summary = document.getElementById('route-summary');
-            summary.innerHTML = `<li>Distance: ${data.distance} units</li><li>Method: ${data.method}</li>`;
+            summary.innerHTML = `<li>Distance: ${route.distance} units</li><li>Method: ${route.method}</li>`;
         }
     });
 }); 
