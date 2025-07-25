@@ -376,21 +376,25 @@ def api_ask_ai(request):
             return JsonResponse({"error": str(e)}, status=400)
     return JsonResponse({"error": "Invalid request"}, status=405)
 
-model = None
-MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'qaoa_angle_predictor.keras')
+MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'qaoa_angle_predictor.tflite')
+interpreter = None
+input_details = None
+output_details = None
 
 def get_model():
-    global model
-    if model is None:
-        model = tf.keras.models.load_model(MODEL_PATH)
-    return model
+    global interpreter, input_details, output_details
+    if interpreter is None:
+        # Load TFLite model and allocate tensors
+        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+        interpreter.allocate_tensors()
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+    return interpreter
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(never_cache, name='dispatch')
 class QAOAPredictView(APIView):
     def post(self, request, *args, **kwargs):
-        from rest_framework.response import Response
-        global model
         response_headers = {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -405,18 +409,26 @@ class QAOAPredictView(APIView):
             if arr.shape != (8, 8):
                 return Response({'error': 'qubo_matrix must be 8x8'}, status=400, headers=response_headers)
             arr = arr.flatten().reshape(1, -1)
-            if model is None:
-                # Load the model if not loaded
-                import tensorflow as tf
-                model = tf.keras.models.load_model('qaoa_angle_predictor.keras')
-            prediction = model.predict(arr)
+            
+            # Get TFLite interpreter
+            get_model()
+            
+            # Set input tensor
+            interpreter.set_tensor(input_details[0]['index'], arr)
+            
+            # Run inference
+            interpreter.invoke()
+            
+            # Get output tensor
+            prediction = interpreter.get_tensor(output_details[0]['index'])
             beta, gamma = float(prediction[0][0]), float(prediction[0][1])
+            
             return Response({'beta': beta, 'gamma': gamma}, headers=response_headers)
         except Exception as e:
             return Response({'error': str(e)}, status=500, headers=response_headers)
     
     def options(self, request, *args, **kwargs):
-        response = requests.Response(status=200)
+        response = Response(status=200)
         response['Access-Control-Allow-Origin'] = '*'
         response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type'

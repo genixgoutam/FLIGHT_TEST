@@ -26,8 +26,11 @@ SECRET_KEY = 'django-insecure-bsf#vg*7u#ag8xfz7vu6bflt!!05so1umy8bdgif7k0pn4%d8o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['.vercel.app', 'localhost', '.now.sh','127.0.0.1']  
+import os
+os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+
+ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['.flight-test-app.now.sh','.flight-test-app.vercel.app', 'localhost', '.now.sh','127.0.0.1']  
 # Application definition
 
 INSTALLED_APPS = [
