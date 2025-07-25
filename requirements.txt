@@ -35,12 +35,7 @@ gotrue==2.12.3
 greenlet==3.2.3
 grpcio==1.73.1
 grpcio-status==1.71.2
-gunicorn==24.3.0
-h11==0.16.0
-h2==4.2.0
-h5py==3.14.0
-hpack==4.1.0
-httpcore==1.0.9
+gunicorn==20.1.0
 h11==0.16.0
 h2==4.2.0
 h5py==3.14.0
