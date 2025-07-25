@@ -44,6 +44,6 @@ COPY --chown=appuser:appuser airports_locations.json .
 # RUN chmod +x render-start.sh
 # CMD ["./render-start.sh"]
 
-EXPOSE 8000
+EXPOSE 8010
 
-CMD ["gunicorn", "FILGHT.wsgi:application", "--bind", "0.0.0.0:${PORT}"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8010"]
