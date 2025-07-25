@@ -46,4 +46,5 @@ COPY --chown=appuser:appuser airports_locations.json .
 
 EXPOSE 8010
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["gunicorn", "FILGHT.wsgi:application", "--bind", "0.0.0.0:8010"]
+
