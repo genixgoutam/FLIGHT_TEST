@@ -28,9 +28,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-# Install gunicorn (if not in requirements.txt)
-RUN pip install gunicorn
-
 USER appuser
 
 COPY --chown=appuser:appuser . .

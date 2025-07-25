@@ -1,42 +1,24 @@
-# Core Django
+# === Core Django ===
 Django==5.2.4
 djangorestframework==3.16.0
 asgiref==3.9.1
 sqlparse==0.5.3
 tzdata==2025.2
 
-# Django Extensions
+# === Django Extensions ===
 django-crispy-forms==2.4
 crispy-bootstrap5==2025.6
 django-allauth==0.53.0
 
-# Database
+# === Database ===
 dj-database-url==1.3.0
 
-# AI/ML Core
-tensorflow==2.19.0
-keras==3.10.0
+# === Lightweight TensorFlow Lite Runtime ===
+tflite-runtime==2.12.0
 numpy==2.1.3
 pandas==2.3.1
 
-# AI/ML Dependencies
-absl-py==2.3.1
-astunparse==1.6.3
-flatbuffers==25.2.10
-gast==0.6.0
-google-pasta==0.2.0
-h5py==3.14.0
-libclang==18.1.1
-ml_dtypes==0.5.1
-opt_einsum==3.4.0
-protobuf==5.29.5
-tensorboard==2.19.0
-tensorboard-data-server==0.7.2
-tensorflow-io-gcs-filesystem==0.31.0
-termcolor==3.1.1
-wrapt==1.17.2
-
-# LangChain for Gemini AI
+# === LangChain + Gemini ===
 langchain==0.3.26
 langchain-core==0.3.68
 langchain-google-genai==2.1.7
@@ -46,7 +28,7 @@ google-auth==2.40.3
 googleapis-common-protos==1.70.0
 grpcio==1.73.1
 
-# Visualization
+# === Visualization ===
 matplotlib==3.10.3
 plotly==6.2.0
 contourpy==1.3.2
@@ -55,13 +37,13 @@ fonttools==4.59.0
 kiwisolver==1.4.8
 pyparsing==3.2.3
 
-# HTTP/API
+# === HTTP/API ===
 requests==2.32.4
 httpx==0.28.1
 httpcore==1.0.9
 h11==0.16.0
 
-# Utilities
+# === Utilities ===
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 PyYAML==6.0.2
@@ -71,17 +53,17 @@ packaging==24.2
 six==1.17.0
 typing_extensions==4.14.1
 
-# Authentication
+# === Authentication / JWT ===
 PyJWT==2.10.1
 pydantic==2.11.7
 pydantic_core==2.33.2
 
-# Production
+# === Production Server ===
 gunicorn==20.1.0
 pillow==11.3.0
 pytz==2025.2
 
-# Standard Dependencies
+# === Certs / URL Handling ===
 certifi==2025.7.14
 charset-normalizer==3.4.2
 idna==3.10
