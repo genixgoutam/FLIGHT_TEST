@@ -24,11 +24,11 @@ import os
 import math 
 from django.utils.decorators import method_decorator
 import numpy as np
-import tensorflow as tf
-import xml.etree.ElementTree as ET
-from shapely.geometry import Polygon, LineString
-import folium
-from folium.plugins import MeasureControl
+# import tensorflow as tf
+# import xml.etree.ElementTree as ET
+# from shapely.geometry import Polygon, LineString
+# import folium
+# from folium.plugins import MeasureControl
 
 # API endpoint for all airports
 @csrf_exempt
@@ -375,22 +375,6 @@ def api_ask_ai(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     return JsonResponse({"error": "Invalid request"}, status=405)
-
-MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'qaoa_angle_predictor.tflite')
-interpreter = None
-input_details = None
-output_details = None
-
-def get_model():
-    global interpreter, input_details, output_details
-    if interpreter is None:
-        # Load TFLite model and allocate tensors
-        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
-        interpreter.allocate_tensors()
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
-    return interpreter
-
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(never_cache, name='dispatch')
 class QAOAPredictView(APIView):
@@ -405,35 +389,25 @@ class QAOAPredictView(APIView):
             qubo_matrix = data.get('qubo_matrix')
             if qubo_matrix is None:
                 return Response({'error': 'Missing qubo_matrix'}, status=400, headers=response_headers)
+
             arr = np.array(qubo_matrix, dtype=np.float32)
             if arr.shape != (8, 8):
                 return Response({'error': 'qubo_matrix must be 8x8'}, status=400, headers=response_headers)
-            arr = arr.flatten().reshape(1, -1)
-            
-            # Get TFLite interpreter
-            get_model()
-            
-            # Set input tensor
-            interpreter.set_tensor(input_details[0]['index'], arr)
-            
-            # Run inference
-            interpreter.invoke()
-            
-            # Get output tensor
-            prediction = interpreter.get_tensor(output_details[0]['index'])
-            beta, gamma = float(prediction[0][0]), float(prediction[0][1])
-            
-            return Response({'beta': beta, 'gamma': gamma}, headers=response_headers)
+
+            path = np.argmax(arr, axis=1).tolist()
+
+            return Response({'path': path}, headers=response_headers)
+
         except Exception as e:
             return Response({'error': str(e)}, status=500, headers=response_headers)
-    
+
     def options(self, request, *args, **kwargs):
         response = Response(status=200)
         response['Access-Control-Allow-Origin'] = '*'
         response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type'
         return response
-
+    
 from django.shortcuts import render
 from .models import Airport
 
@@ -524,145 +498,145 @@ def full_report(request):
 
     return JsonResponse(report_data)
 
-AIRPORT_COORDS = {
-    "BLR": (77.7100, 12.9500),   # (longitude, latitude)
-    "HBX": (74.7667, 15.3617),
-    "TRV": (76.9200, 8.4820),
-    "MAA": (80.1667, 13.1667),
-    "DEL": (77.1025, 28.5616),
-}
+# AIRPORT_COORDS = {
+#     "BLR": (77.7100, 12.9500),   # (longitude, latitude)
+#     "HBX": (74.7667, 15.3617),
+#     "TRV": (76.9200, 8.4820),
+#     "MAA": (80.1667, 13.1667),
+#     "DEL": (77.1025, 28.5616),
+# }
 
-def fetch_turbulence_sigmets():
-    url = "https://aviationweather.gov/adds/dataserver_current/httpparam"
-    params = {
-        "datasource": "sigmet",
-        "requestType": "retrieve",
-        "format": "xml",
-        "hazardType": "Turbulence",
-        "hoursBeforeNow": "4"
-    }
+# def fetch_turbulence_sigmets():
+#     url = "https://aviationweather.gov/adds/dataserver_current/httpparam"
+#     params = {
+#         "datasource": "sigmet",
+#         "requestType": "retrieve",
+#         "format": "xml",
+#         "hazardType": "Turbulence",
+#         "hoursBeforeNow": "4"
+#     }
 
-    response = requests.get(url, params=params)
-    root = ET.fromstring(response.content)
+#     response = requests.get(url, params=params)
+#     root = ET.fromstring(response.content)
 
-    zones = []
+#     zones = []
 
-    for sigmet in root.iter("SIGMET"):
-        coords_str = sigmet.findtext("areaCoords") or sigmet.findtext("geometry")
-        if coords_str:
-            points = []
-            for line in coords_str.strip().split():
-                try:
-                    lat, lon = map(float, line.strip().split(","))
-                    points.append((lon, lat))  # shapely uses (lon, lat)
-                except:
-                    continue
-            if len(points) >= 3:
-                polygon = Polygon(points)
-                zones.append(polygon)
-    return zones
+#     for sigmet in root.iter("SIGMET"):
+#         coords_str = sigmet.findtext("areaCoords") or sigmet.findtext("geometry")
+#         if coords_str:
+#             points = []
+#             for line in coords_str.strip().split():
+#                 try:
+#                     lat, lon = map(float, line.strip().split(","))
+#                     points.append((lon, lat))  # shapely uses (lon, lat)
+#                 except:
+#                     continue
+#             if len(points) >= 3:
+#                 polygon = Polygon(points)
+#                 zones.append(polygon)
+#     return zones
 
-def compute_cost(route_points, turbulence_zones):
-    route_line = LineString(route_points)
-    cost = 0
-    hits = []
+# def compute_cost(route_points, turbulence_zones):
+#     route_line = LineString(route_points)
+#     cost = 0
+#     hits = []
 
-    for zone in turbulence_zones:
-        if route_line.intersects(zone):
-            cost += 100
-            hits.append(zone)
+#     for zone in turbulence_zones:
+#         if route_line.intersects(zone):
+#             cost += 100
+#             hits.append(zone)
 
-    return cost, hits
+#     return cost, hits
 
-def turbulence(request):
-    origin = request.GET.get('origin', 'BLR').strip().upper()
-    destination = request.GET.get('destination', 'TRV').strip().upper()
+# def turbulence(request):
+#     origin = request.GET.get('origin', 'BLR').strip().upper()
+#     destination = request.GET.get('destination', 'TRV').strip().upper()
 
-    origin_coords = AIRPORT_COORDS.get(origin)
-    dest_coords = AIRPORT_COORDS.get(destination)
+#     origin_coords = AIRPORT_COORDS.get(origin)
+#     dest_coords = AIRPORT_COORDS.get(destination)
 
-    if not (origin_coords and dest_coords):
-        return render(request, 'turbulence.html', {
-            'error': "Invalid IATA code entered.",
-            'map_html': "",
-            'route_cost': 0,
-            'affected_zones': 0,
-            'origin': origin,
-            'destination': destination
-        })
+#     if not (origin_coords and dest_coords):
+#         return render(request, 'turbulence.html', {
+#             'error': "Invalid IATA code entered.",
+#             'map_html': "",
+#             'route_cost': 0,
+#             'affected_zones': 0,
+#             'origin': origin,
+#             'destination': destination
+#         })
 
-    # Extract lon/lat tuples
-    route_points = [origin_coords, dest_coords]  # [(lon, lat), (lon, lat)]
+#     # Extract lon/lat tuples
+#     route_points = [origin_coords, dest_coords]  # [(lon, lat), (lon, lat)]
 
-    # Fetch turbulence zones
-    from shapely.geometry import Polygon
+#     # Fetch turbulence zones
+#     from shapely.geometry import Polygon
     
-    raw_zones = fetch_turbulence_sigmets()
+#     raw_zones = fetch_turbulence_sigmets()
 
-    # Convert all zone coordinate lists into Polygon objects
-    sigmet_zones = []
-    for zone in raw_zones:
-        if isinstance(zone, Polygon):
-            sigmet_zones.append(zone)
-        elif isinstance(zone, list):
-            try:
-                poly = Polygon(zone)
-                if poly.is_valid:
-                    sigmet_zones.append(poly)
-            except:
-                continue
+#     # Convert all zone coordinate lists into Polygon objects
+#     sigmet_zones = []
+#     for zone in raw_zones:
+#         if isinstance(zone, Polygon):
+#             sigmet_zones.append(zone)
+#         elif isinstance(zone, list):
+#             try:
+#                 poly = Polygon(zone)
+#                 if poly.is_valid:
+#                     sigmet_zones.append(poly)
+#             except:
+#                 continue
 
-    cost, affected = compute_cost(route_points, sigmet_zones)
+#     cost, affected = compute_cost(route_points, sigmet_zones)
 
-    # Center map between points
-    center_lat = (origin_coords[1] + dest_coords[1]) / 2
-    center_lon = (origin_coords[0] + dest_coords[0]) / 2
+#     # Center map between points
+#     center_lat = (origin_coords[1] + dest_coords[1]) / 2
+#     center_lon = (origin_coords[0] + dest_coords[0]) / 2
 
-    # Create Folium map
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=6)
+#     # Create Folium map
+#     m = folium.Map(location=[center_lat, center_lon], zoom_start=6)
 
-    # Add route polyline: switch to (lat, lon) for folium
-    folium.PolyLine(
-        [(lat, lon) for lon, lat in route_points],
-        color="blue",
-        weight=5,
-        tooltip=f"{origin} → {destination}"
-    ).add_to(m)
+#     # Add route polyline: switch to (lat, lon) for folium
+#     folium.PolyLine(
+#         [(lat, lon) for lon, lat in route_points],
+#         color="blue",
+#         weight=5,
+#         tooltip=f"{origin} → {destination}"
+#     ).add_to(m)
 
-    # Draw turbulence zones
-    for zone in sigmet_zones:
-        folium.Polygon(
-            locations=[(lat, lon) for lon, lat in zone.exterior.coords],
-            color='red',
-            fill=True,
-            fill_opacity=0.4,
-            tooltip="Turbulence Zone"
-        ).add_to(m)
+#     # Draw turbulence zones
+#     for zone in sigmet_zones:
+#         folium.Polygon(
+#             locations=[(lat, lon) for lon, lat in zone.exterior.coords],
+#             color='red',
+#             fill=True,
+#             fill_opacity=0.4,
+#             tooltip="Turbulence Zone"
+#         ).add_to(m)
 
 
-    # Add origin and destination markers
-    folium.Marker(
-        location=(origin_coords[1], origin_coords[0]),
-        popup=f"Origin: {origin}",
-        icon=folium.Icon(color="green", icon="info-sign")
-    ).add_to(m)
+#     # Add origin and destination markers
+#     folium.Marker(
+#         location=(origin_coords[1], origin_coords[0]),
+#         popup=f"Origin: {origin}",
+#         icon=folium.Icon(color="green", icon="info-sign")
+#     ).add_to(m)
 
-    folium.Marker(
-        location=(dest_coords[1], dest_coords[0]),
-        popup=f"Destination: {destination}",
-        icon=folium.Icon(color="red", icon="info-sign")
-    ).add_to(m)
+#     folium.Marker(
+#         location=(dest_coords[1], dest_coords[0]),
+#         popup=f"Destination: {destination}",
+#         icon=folium.Icon(color="red", icon="info-sign")
+#     ).add_to(m)
 
-    m.add_child(MeasureControl())
-    map_html = m._repr_html_()
+#     m.add_child(MeasureControl())
+#     map_html = m._repr_html_()
 
-    return render(request, 'turbulence.html', {
-        'map_html': map_html,
-        'route_cost': cost,
-        'affected_zones': len(affected),
-        'origin': origin,
-        'destination': destination
-    })
+#     return render(request, 'turbulence.html', {
+#         'map_html': map_html,
+#         'route_cost': cost,
+#         'affected_zones': len(affected),
+#         'origin': origin,
+#         'destination': destination
+#     })
 
 def about(request):
     return render(request, 'about.html')
