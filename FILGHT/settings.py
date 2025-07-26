@@ -24,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-bsf#vg*7u#ag8xfz7vu6bflt!!05so1umy8bdgif7k0pn4%d8o'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 import os
 os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*','.onrender.com', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
