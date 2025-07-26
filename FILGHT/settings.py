@@ -30,8 +30,6 @@ import os
 os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
 
 ALLOWED_HOSTS = ['*']
-# ALLOWED_HOSTS = ['.flight-test-app.now.sh','.flight-test-app.vercel.app', 'localhost', '.now.sh','127.0.0.1']  
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -32,14 +32,8 @@ USER appuser
 
 COPY --chown=appuser:appuser . .
 
-COPY --chown=appuser:appuser qaoa_angle_predictor.keras .
 COPY --chown=appuser:appuser airports_cleaned.json .
 COPY --chown=appuser:appuser airports_locations.json .
-
-# Optional if using script
-# COPY render-start.sh .
-# RUN chmod +x render-start.sh
-# CMD ["./render-start.sh"]
 
 EXPOSE 8010
 
