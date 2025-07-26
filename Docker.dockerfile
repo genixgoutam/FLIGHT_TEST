@@ -32,10 +32,7 @@ USER appuser
 
 COPY --chown=appuser:appuser . .
 
-COPY --chown=appuser:appuser airports_cleaned.json .
-COPY --chown=appuser:appuser airports_locations.json .
+EXPOSE 8000
 
-EXPOSE 8010
-
-CMD ["gunicorn", "FILGHT.wsgi:application", "--bind", "0.0.0.0:8010"]
+CMD ["gunicorn", "FILGHT.wsgi:application", "--bind", "0.0.0.0:8000"]
 
